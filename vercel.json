@@ -1,8 +1,3 @@
 {
-  "version": 2,
-  "routes": [
-    { "src": "/api/agenda", "dest": "/api/agenda.js" },
-    { "src": "/api/locs", "dest": "/api/locs.js" },
-    { "src": "/(.*)", "dest": "/public/$1" }
-  ]
+  "version": 2
 }
