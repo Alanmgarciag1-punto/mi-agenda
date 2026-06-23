@@ -1,3 +1,10 @@
 {
-  "version": 2
+  "version": 2,
+  "outputDirectory": ".",
+  "routes": [
+    { "src": "/api/agenda", "dest": "/api/agenda.js" },
+    { "src": "/api/locs", "dest": "/api/locs.js" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
