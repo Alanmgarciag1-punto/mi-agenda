@@ -351,7 +351,11 @@ function fkey(d,si){return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()+'_'+
 function isToday(d){const t=new Date();return d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear();}
 function getEntry(d,si,di){
   const k=fkey(d,si);
-  if(data[k]!==undefined) return data[k];
+  if(data[k]!==undefined){
+    // '__EMPTY__' marca una celda de plantilla explícitamente borrada/movida por el usuario
+    if(data[k]==='__EMPTY__') return null;
+    return data[k];
+  }
   const hoy=new Date(); hoy.setHours(0,0,0,0);
   const monHoy=new Date(hoy); const dowH=(monHoy.getDay()+6)%7; monHoy.setDate(monHoy.getDate()-dowH);
   const monD=new Date(d); monD.setHours(0,0,0,0); const dowD=(monD.getDay()+6)%7; monD.setDate(monD.getDate()-dowD);
@@ -673,7 +677,7 @@ async function saveCell(){
   if(newSi!==aSi && newSi>=0 && newSi<SLOTS.length){
     const parts=akey.split('_');
     const newKey=parts.slice(0,3).join('_')+'_'+newSi;
-    await guardar(akey, null);
+    await guardar(akey, '__EMPTY__');
     await guardar(newKey, entry);
   } else {
     await guardar(akey, entry);
@@ -681,7 +685,7 @@ async function saveCell(){
   closePanel(); render();
 }
 async function clrCell(){
-  if(akey) await guardar(akey, null);
+  if(akey) await guardar(akey, '__EMPTY__');
   closePanel(); render();
 }
 
@@ -700,7 +704,7 @@ async function oDrp(e,destKey,destDi,destSi){
   if(!src) return;
   const dk=dragSrc.key;
   dragSrc=null;
-  await guardar(dk, null);
+  await guardar(dk, '__EMPTY__');
   await guardar(destKey, {...src});
   render();
 }
