@@ -278,7 +278,7 @@ const TMPL = [
 ];
 
 // ── ESTADO ───────────────────────────────────────────────
-let view = 'semana';
+let view = localStorage.getItem('agenda_view') || 'semana';
 let off  = parseInt(localStorage.getItem('agenda_off')||'0');
 let data = {};
 let locs = ['León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.'];
@@ -333,6 +333,7 @@ async function cargarDatos(){
     locs = JSON.parse(localStorage.getItem('agenda_locs')||'["León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto."]');
     showSync('⚠ Sin conexión (local)','err');
   }
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos'}[view])));
   render();
 }
 
@@ -473,6 +474,7 @@ function getDayEntries(d){
 // ── NAVEGACIÓN / VISTAS ──────────────────────────────────
 function setView(v){
   view=v;
+  localStorage.setItem('agenda_view', v);
   document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos'}[v])));
   render();
 }
