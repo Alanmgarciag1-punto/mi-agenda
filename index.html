@@ -152,6 +152,7 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
     <button class="vbtn active" onclick="setView('semana')">Semana</button>
     <button class="vbtn" onclick="setView('mes')">Mes</button>
     <button class="vbtn" onclick="setView('año')">Año</button>
+    <button class="vbtn" onclick="setView('habitos')">Hábitos</button>
   </div>
   <div class="nav-area">
     <button onclick="navPrev()">←</button>
@@ -281,6 +282,23 @@ let view = 'semana';
 let off  = parseInt(localStorage.getItem('agenda_off')||'0');
 let data = {};
 let locs = ['León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.'];
+let habitosData = {};
+
+const HABITOS_DEF = [
+  {id:'pe', label:'Primer entreno', linkType:'triatlon-am'},
+  {id:'se', label:'Segundo entreno', linkType:'triatlon-pm'},
+  {id:'cr', label:'Creatina', linkType:null},
+  {id:'ca', label:'Carbohidratos', linkType:null},
+  {id:'e',  label:'Electrolitos', linkType:null},
+  {id:'p',  label:'Proteína', linkType:null},
+  {id:'a',  label:'Almuerzo', linkType:'sub', linkSub:'Desayuno'},
+  {id:'c1', label:'Snack mañana', linkType:'sub', linkSub:'Snack mañana'},
+  {id:'co', label:'Comida', linkType:'sub', linkSub:'Comida'},
+  {id:'c2', label:'Snack tarde', linkType:'sub', linkSub:'Snack tarde'},
+  {id:'ce', label:'Cena', linkType:'sub', linkSub:'Cena'},
+  {id:'l',  label:'Leer', linkType:'sub', linkSub:'Lectura'}
+];
+const TRI_SUBS = ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'];
 let akey=null, aCat=null, aSub=null, aDur=1, aSi=0;
 
 // ── SUPABASE: CARGAR ─────────────────────────────────────
@@ -297,6 +315,15 @@ async function cargarDatos(){
     const {data: locsRow, error: e2} = await sb.from('locs').select('data').eq('id',1).single();
     if(e2) throw e2;
     if(locsRow && locsRow.data) locs = locsRow.data;
+
+    // Cargar hábitos
+    const {data: habRows, error: e3} = await sb.from('habitos').select('fecha_key,habito_id,completado');
+    if(e3) throw e3;
+    habitosData = {};
+    (habRows||[]).forEach(r => {
+      if(!habitosData[r.fecha_key]) habitosData[r.fecha_key] = {};
+      habitosData[r.fecha_key][r.habito_id] = r.completado;
+    });
 
     showSync('✓ Sincronizado','ok');
   } catch(e) {
@@ -345,6 +372,71 @@ async function guardarLocs(){
   }
 }
 
+// ── HÁBITOS: GUARDAR ──────────────────────────────────────
+async function guardarHabito(fechaKey, habitoId, completado){
+  if(!habitosData[fechaKey]) habitosData[fechaKey] = {};
+  habitosData[fechaKey][habitoId] = completado;
+  try {
+    const {error} = await sb.from('habitos').upsert(
+      {fecha_key: fechaKey, habito_id: habitoId, completado},
+      {onConflict: 'fecha_key,habito_id'}
+    );
+    if(error) throw error;
+    showSync('✓ Guardado','ok');
+  } catch(e) {
+    console.error('Error guardando hábito:', e);
+    showSync('⚠ Guardado local','err');
+  }
+}
+
+// ── HÁBITOS: BUSCAR BLOQUES DE AGENDA PARA ENLAZAR ────────
+function fechaKeyToDate(fechaKey){
+  const [y,m,d] = fechaKey.split('-').map(Number);
+  return new Date(y,m,d);
+}
+function buscarBloquesEnlace(fechaKey, habitoDef){
+  const d = fechaKeyToDate(fechaKey);
+  const entries = getDayEntries(d);
+  if(habitoDef.linkType==='sub'){
+    return entries.filter(x => x.e && x.e.sub===habitoDef.linkSub).map(x=>({...x, key:fkey(d,x.si)}));
+  }
+  if(habitoDef.linkType==='triatlon-am'){
+    return entries.filter(x => x.e && x.e.cat==='tri' && x.si < 24).map(x=>({...x, key:fkey(d,x.si)}));
+  }
+  if(habitoDef.linkType==='triatlon-pm'){
+    return entries.filter(x => x.e && x.e.cat==='tri' && x.si >= 24).map(x=>({...x, key:fkey(d,x.si)}));
+  }
+  return [];
+}
+async function aplicarEnlaceHabito(fechaKey, habitoDef, completado){
+  if(!habitoDef.linkType) return;
+  const candidatos = buscarBloquesEnlace(fechaKey, habitoDef);
+  if(candidatos.length===0) return;
+  let elegido = candidatos[0];
+  if(candidatos.length > 1){
+    const opciones = candidatos.map((c,i)=>`${i+1}. ${c.e.titulo||c.e.sub} (${slotToTime(c.si)})`).join('\n');
+    const sel = prompt(`Hay varios bloques posibles, elige el número:\n${opciones}`);
+    const idx = parseInt(sel)-1;
+    if(isNaN(idx) || !candidatos[idx]) return;
+    elegido = candidatos[idx];
+  }
+  const nuevoEntry = {...elegido.e, estado: completado ? 'completado' : ''};
+  await guardar(elegido.key, nuevoEntry);
+}
+function estadoBloqueEnlazado(fechaKey, habitoDef){
+  const candidatos = buscarBloquesEnlace(fechaKey, habitoDef);
+  if(candidatos.length===0) return null;
+  return candidatos.some(c => c.e.estado==='completado');
+}
+async function toggleHabito(fechaKey, habitoId){
+  const habitoDef = HABITOS_DEF.find(h=>h.id===habitoId);
+  const actual = (habitosData[fechaKey] && habitosData[fechaKey][habitoId]) || false;
+  const nuevo = !actual;
+  await guardarHabito(fechaKey, habitoId, nuevo);
+  if(habitoDef.linkType) await aplicarEnlaceHabito(fechaKey, habitoDef, nuevo);
+  render();
+}
+
 // ── HELPERS ──────────────────────────────────────────────
 function getMon(){
   const d=new Date(),day=d.getDay();
@@ -381,7 +473,7 @@ function getDayEntries(d){
 // ── NAVEGACIÓN / VISTAS ──────────────────────────────────
 function setView(v){
   view=v;
-  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año'}[v])));
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos'}[v])));
   render();
 }
 function navPrev(){off--;localStorage.setItem('agenda_off',off);render();}
@@ -393,6 +485,7 @@ function render(){
   if(view==='semana') renderSemana(el);
   else if(view==='dia') renderDia(el);
   else if(view==='mes') renderMes(el);
+  else if(view==='habitos') renderHabitos(el);
   else renderAnio(el);
 }
 
@@ -607,6 +700,46 @@ function renderAnio(el){
   el.innerHTML=html;
 }
 
+// ── VISTA HÁBITOS ─────────────────────────────────────────
+function renderHabitos(el){
+  const today=new Date();
+  const mo=(today.getMonth()+off+120)%12;
+  const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+off)/12);
+  document.getElementById('nav-title').textContent=MESES_L[mo]+' '+yrAdj;
+  document.getElementById('main-title').textContent='Seguimiento de Hábitos';
+  const last=new Date(yrAdj,mo+1,0);
+
+  let html = '<div style="overflow:auto;height:100%;padding:12px 16px;">';
+  html += '<table style="border-collapse:collapse;width:100%;min-width:760px;font-size:11px;">';
+  html += '<thead><tr style="position:sticky;top:0;background:#1a1a1a;z-index:5;">';
+  html += '<th style="padding:5px 8px;color:#f5f0e8;text-align:left;border:1px solid #2a2a2a;">Día</th>';
+  HABITOS_DEF.forEach(h => {
+    html += `<th style="padding:5px 4px;color:#f5f0e8;font-size:10px;border:1px solid #2a2a2a;" title="${h.label}">${h.label}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  for(let day=1; day<=last.getDate(); day++){
+    const d = new Date(yrAdj, mo, day);
+    const dow = DAYS_MIN[(d.getDay()+6)%7];
+    const fechaKey = d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+    const isT = isToday(d);
+    html += `<tr${isT?' style="background:#EEEDFE;"':''}>`;
+    html += `<td style="padding:4px 8px;border:1px solid #e0ddd8;font-weight:600;white-space:nowrap;">${day} ${dow}</td>`;
+    HABITOS_DEF.forEach(h => {
+      const marcado = (habitosData[fechaKey] && habitosData[fechaKey][h.id]) || false;
+      const bg = marcado ? '#EAF3DE' : '#fff';
+      const color = marcado ? '#27500A' : '#ccc';
+      html += `<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:1px solid #e0ddd8;text-align:center;cursor:pointer;background:${bg};">`;
+      html += `<span style="color:${color};font-size:14px;">${marcado?'✓':'·'}</span></td>`;
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  html += '<p style="font-size:11px;color:#888;margin-top:12px;">Primer/segundo entreno, almuerzo, snacks, comida, cena y lectura se enlazan automáticamente con el bloque correspondiente en la agenda.</p>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 // ── PANEL ────────────────────────────────────────────────
 function openPanel(key,lbl,di,si){
   akey=key; aSi=si;
@@ -690,7 +823,21 @@ async function saveCell(){
   } else {
     await guardar(akey, entry);
   }
+  await sincronizarHabitoDesdeBloque(akey, entry);
   closePanel(); render();
+}
+async function sincronizarHabitoDesdeBloque(key, entry){
+  const parts = key.split('_');
+  const fechaKey = parts.slice(0,3).join('-');
+  const si = parseInt(parts[3]);
+  const completado = entry.estado === 'completado';
+  let habitoDef = null;
+  if(entry.cat === 'tri'){
+    habitoDef = HABITOS_DEF.find(h => h.linkType === (si < 24 ? 'triatlon-am' : 'triatlon-pm'));
+  } else {
+    habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && h.linkSub===entry.sub);
+  }
+  if(habitoDef) await guardarHabito(fechaKey, habitoDef.id, completado);
 }
 async function clrCell(){
   if(akey) await guardar(akey, '__EMPTY__');
