@@ -287,6 +287,7 @@ let habitosData = {};
 const HABITOS_DEF = [
   {id:'pe', label:'Primer entreno', linkType:'triatlon-am'},
   {id:'se', label:'Segundo entreno', linkType:'triatlon-pm'},
+  {id:'fu', label:'Fuerza', linkType:'sub', linkSub:'Fuerza'},
   {id:'cr', label:'Creatina', linkType:null},
   {id:'ca', label:'Carbohidratos', linkType:null},
   {id:'e',  label:'Electrolitos', linkType:null},
@@ -833,11 +834,9 @@ async function sincronizarHabitoDesdeBloque(key, entry){
   const fechaKey = parts.slice(0,3).join('-');
   const si = parseInt(parts[3]);
   const completado = entry.estado === 'completado';
-  let habitoDef = null;
-  if(entry.cat === 'tri'){
+  let habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && h.linkSub===entry.sub);
+  if(!habitoDef && entry.cat === 'tri'){
     habitoDef = HABITOS_DEF.find(h => h.linkType === (si < 24 ? 'triatlon-am' : 'triatlon-pm'));
-  } else {
-    habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && h.linkSub===entry.sub);
   }
   if(habitoDef) await guardarHabito(fechaKey, habitoDef.id, completado);
 }
