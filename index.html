@@ -831,8 +831,8 @@ async function saveCell(){
 }
 async function sincronizarHabitoDesdeBloque(key, entry){
   const parts = key.split('_');
-  const fechaKey = parts.slice(0,3).join('-');
-  const si = parseInt(parts[3]);
+  const fechaKey = parts[0];
+  const si = parseInt(parts[1]);
   const completado = entry.estado === 'completado';
   console.log('[HABITO-SYNC] key:', key, '| fechaKey:', fechaKey, '| si:', si, '| cat:', entry.cat, '| sub:', entry.sub, '| titulo:', entry.titulo, '| completado:', completado);
   let habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && (h.linkSub===entry.sub || h.linkSub===entry.titulo));
