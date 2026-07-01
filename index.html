@@ -400,7 +400,7 @@ function buscarBloquesEnlace(fechaKey, habitoDef){
   const d = fechaKeyToDate(fechaKey);
   const entries = getDayEntries(d);
   if(habitoDef.linkType==='sub'){
-    return entries.filter(x => x.e && x.e.sub===habitoDef.linkSub).map(x=>({...x, key:fkey(d,x.si)}));
+    return entries.filter(x => x.e && (x.e.sub===habitoDef.linkSub || x.e.titulo===habitoDef.linkSub)).map(x=>({...x, key:fkey(d,x.si)}));
   }
   if(habitoDef.linkType==='triatlon-am'){
     return entries.filter(x => x.e && x.e.cat==='tri' && x.si < 24).map(x=>({...x, key:fkey(d,x.si)}));
@@ -738,7 +738,7 @@ function renderHabitos(el){
     html += '</tr>';
   }
   html += '</tbody></table>';
-  html += '<p style="font-size:11px;color:#888;margin-top:12px;">Primer/segundo entreno, almuerzo, snacks, comida, cena y lectura se enlazan automáticamente con el bloque correspondiente en la agenda.</p>';
+  html += '<p style="font-size:11px;color:#888;margin-top:12px;">Primer/segundo entreno, fuerza, almuerzo, snacks, comida, cena y lectura se enlazan automáticamente con el bloque correspondiente en la agenda.</p>';
   html += '</div>';
   el.innerHTML = html;
 }
@@ -834,7 +834,8 @@ async function sincronizarHabitoDesdeBloque(key, entry){
   const fechaKey = parts.slice(0,3).join('-');
   const si = parseInt(parts[3]);
   const completado = entry.estado === 'completado';
-  let habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && h.linkSub===entry.sub);
+  // Buscar por subcategoría exacta (sub o titulo)
+  let habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && (h.linkSub===entry.sub || h.linkSub===entry.titulo));
   if(!habitoDef && entry.cat === 'tri'){
     habitoDef = HABITOS_DEF.find(h => h.linkType === (si < 24 ? 'triatlon-am' : 'triatlon-pm'));
   }
