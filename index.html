@@ -18,21 +18,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f4f0;color:#1a1a1
 #sync-status.loading{background:#EDE8E0;color:#3a3530;}
 
 /* HEADER */
-.top-bar{background:#1a1a1a;color:#f5f0e8;padding:7px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;flex-shrink:0;}
-.top-bar h1{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.top-bar{background:#1a1a1a;color:#f5f0e8;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;}
+.top-bar h1{display:none;}
 .nav-area{display:flex;align-items:center;gap:10px;}
-.nav-area button{background:none;border:1px solid #f5f0e840;color:#f5f0e8;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px;transition:background .15s;}
-.nav-area button:hover{background:#f5f0e815;}
-.nav-title{font-size:12px;font-weight:500;min-width:160px;text-align:center;color:#f5f0e8;}
-.view-btns{display:flex;gap:4px;}
-.vbtn{background:none;border:1px solid #f5f0e830;color:#f5f0e880;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:500;transition:all .15s;}
-.vbtn:hover{background:#f5f0e815;color:#f5f0e8;}
-.vbtn.active{background:#f5f0e8;color:#1a1a1a;border-color:#f5f0e8;}
-
-/* LEGEND */
-.legend{background:#1a1a1a;border-top:1px solid #2a2a2a;padding:4px 16px;display:flex;gap:14px;flex-wrap:wrap;flex-shrink:0;}
-.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#f5f0e899;}
-.leg-dot{width:8px;height:8px;border-radius:50%;}
+.nav-date-main{font-size:15px;font-weight:500;color:#f5f0e8;}
+.nav-date-year{font-size:11px;color:#f5f0e850;}
+.nav-area button{background:none;border:1px solid #f5f0e820;color:#f5f0e880;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:14px;transition:background .15s;}
+.nav-area button:hover{background:#f5f0e815;color:#f5f0e8;}
+.nav-title{display:none;}
+.view-btns{display:flex;gap:2px;background:#111;border-radius:8px;padding:3px;}
+.vbtn{background:none;border:none;color:#f5f0e870;border-radius:6px;padding:4px 11px;cursor:pointer;font-size:12px;font-weight:400;transition:all .15s;}
+.vbtn:hover{color:#f5f0e8;}
+.vbtn.active{background:#f5f0e8;color:#1a1a1a;font-weight:500;}
+.vbtn.vbtn-habitos{color:#9B8FD8;}
+.vbtn.vbtn-habitos.active{background:#7C6FCD;color:#fff;}
+.leg-inline{display:flex;gap:12px;align-items:center;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#f5f0e860;}
+.leg-dot{width:7px;height:7px;border-radius:50%;}
+.png-btn{background:none;border:1px solid #f5f0e820;color:#f5f0e860;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;margin-left:4px;}
 
 /* CONTENT AREA */
 .content{flex:1;overflow:auto;min-height:0;}
@@ -85,7 +88,15 @@ table.cal td.slot.drag-over{background:#e8e4f0!important;outline:2px dashed #7C6
 .yday .ydot{width:3px;height:3px;border-radius:50%;}
 
 /* BLOQUES */
-.block{height:100%;width:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;border-radius:3px;padding:1px 4px;text-align:center;line-height:1.2;cursor:grab;overflow:hidden;position:relative;}
+.block{height:100%;width:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:9px;font-weight:500;border-radius:4px;padding:3px 5px;line-height:1.3;cursor:grab;overflow:hidden;position:relative;}
+.block-title{font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.block-footer{display:flex;justify-content:space-between;align-items:center;gap:2px;}
+.block-time{font-size:9px;opacity:.7;}
+.block-badge{font-size:8px;border-radius:20px;padding:1px 5px;white-space:nowrap;flex-shrink:0;}
+.badge-completado{background:#4CAF50;color:#fff;}
+.badge-pendiente{background:#FFF3CD;color:#856404;}
+.badge-progreso{background:#E6F1FB;color:#0C447C;}
+.badge-cancelado{background:#f8d7da;color:#842029;}
 .status-dot{position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 .status-dot.pendiente{background:#E0A93E;}
 .status-dot.progreso{background:#3E7FE0;}
@@ -102,6 +113,12 @@ table.cal td.slot.drag-over{background:#e8e4f0!important;outline:2px dashed #7C6
 .b-break{background:#E6F1FB;color:#0C447C;border-left:3px solid #378ADD;}
 
 /* PANEL */
+.estado-btn{padding:5px 12px;border-radius:20px;border:0.5px solid #e0ddd8;cursor:pointer;font-size:11px;background:#f5f4f0;color:#555;transition:all .15s;}
+.estado-btn:hover{border-color:#888;}
+.estado-btn.sel-completado{background:#EAF3DE;border-color:#639922;color:#27500A;}
+.estado-btn.sel-pendiente{background:#FFF3CD;border-color:#E0A93E;color:#856404;}
+.estado-btn.sel-progreso{background:#E6F1FB;border-color:#378ADD;color:#0C447C;}
+.estado-btn.sel-cancelado{background:#f8d7da;border-color:#E24B4A;color:#842029;}
 .panel-overlay{display:none;position:fixed;inset:0;background:#0005;z-index:50;}
 .panel-overlay.open{display:flex;align-items:center;justify-content:center;}
 .panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-60%);width:420px;max-height:85vh;background:#fff;border-radius:14px;box-shadow:0 8px 40px #0003;display:flex;flex-direction:column;z-index:100;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .2s ease,transform .2s ease;}
@@ -146,40 +163,49 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
 <div id="sync-status"></div>
 
 <div class="top-bar">
-  <h1 id="main-title">Agenda</h1>
+  <div class="nav-area">
+    <button onclick="navPrev()">←</button>
+    <div>
+      <div class="nav-date-main" id="nav-title"></div>
+      <div class="nav-date-year" id="nav-year"></div>
+    </div>
+    <button onclick="navNext()">→</button>
+  </div>
   <div class="view-btns">
     <button class="vbtn" onclick="setView('dia')">Día</button>
     <button class="vbtn active" onclick="setView('semana')">Semana</button>
     <button class="vbtn" onclick="setView('mes')">Mes</button>
     <button class="vbtn" onclick="setView('año')">Año</button>
-    <button class="vbtn" onclick="setView('habitos')">Hábitos</button>
+    <button class="vbtn vbtn-habitos" onclick="setView('habitos')">Hábitos</button>
   </div>
-  <div class="nav-area">
-    <button onclick="navPrev()">←</button>
-    <span class="nav-title" id="nav-title"></span>
-    <button onclick="navNext()">→</button>
-    <button onclick="exportar()" style="background:none;border:1px solid #f5f0e840;color:#f5f0e8;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px;margin-left:8px;" title="Exportar como imagen">⬇ PNG</button>
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <div class="leg-inline">
+      <div class="leg-item"><span class="leg-dot" style="background:#7C6FCD"></span>Triatlón</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#378ADD"></span>NUBO</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#639922"></span>Alim.</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#D4537E"></span>Personal</div>
+    </div>
+    <button onclick="exportar()" class="png-btn" title="Exportar como imagen">⬇ PNG</button>
   </div>
-</div>
-
-<div class="legend">
-  <div class="leg-item"><span class="leg-dot" style="background:#7C6FCD"></span>Triatlón</div>
-  <div class="leg-item"><span class="leg-dot" style="background:#378ADD"></span>NUBO</div>
-  <div class="leg-item"><span class="leg-dot" style="background:#639922"></span>Alimentación</div>
-  <div class="leg-item"><span class="leg-dot" style="background:#D4537E"></span>Personal</div>
 </div>
 
 <div class="content" id="content"></div>
 
 <div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
 <div class="panel" id="panel">
-  <div class="panel-header">
-    <span id="panel-lbl">Detalles</span>
-    <button onclick="closePanel()">×</button>
+  <div class="panel-header" id="panel-header">
+    <div>
+      <div style="font-size:14px;font-weight:500;" id="panel-titulo-display">Detalles</div>
+      <div style="font-size:11px;color:#f5f0e850;" id="panel-lbl"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="panel-cat-badge" style="font-size:11px;border-radius:20px;padding:3px 10px;display:none;"></span>
+      <button onclick="closePanel()" style="background:none;border:none;color:#f5f0e860;font-size:20px;cursor:pointer;line-height:1;">×</button>
+    </div>
   </div>
   <div class="panel-body">
     <div class="prow" style="flex-direction:column;gap:6px;padding-bottom:14px;">
-      <input class="ptitle" id="p-titulo" placeholder="Agrega un título..." type="text"/>
+      <input class="ptitle" id="p-titulo" placeholder="Agrega un título..." type="text" oninput="document.getElementById('panel-titulo-display').textContent=this.value||'Detalles'"/>
     </div>
     <div class="prow">
       <span class="plbl">Categoría</span>
@@ -193,15 +219,10 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
         <div class="sub-pills" id="p-subs"></div>
       </div>
     </div>
-    <div class="prow">
+    <div class="prow" style="flex-direction:column;gap:6px;">
       <span class="plbl">Estado</span>
-      <select class="pval-select" id="p-estado">
-        <option value="">No establecido</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="progreso">En progreso</option>
-        <option value="completado">Completado</option>
-        <option value="cancelado">Cancelado</option>
-      </select>
+      <div id="p-estado-btns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <input type="hidden" id="p-estado" value=""/>
     </div>
     <div class="prow">
       <span class="plbl">Duración</span>
@@ -493,14 +514,33 @@ function render(){
 }
 
 // ── VISTA SEMANA ─────────────────────────────────────────
-function statusDot(e){
-  return e.estado ? `<span class="status-dot ${e.estado}"></span>` : '';
+function statusBadge(e){
+  if(!e || !e.estado) return '';
+  const map = {completado:'badge-completado',pendiente:'badge-pendiente',progreso:'badge-progreso',cancelado:'badge-cancelado'};
+  const labels = {completado:'✓',pendiente:'·',progreso:'→',cancelado:'×'};
+  const cls = map[e.estado] || '';
+  return cls ? `<span class="block-badge ${cls}">${labels[e.estado]||''}</span>` : '';
+}
+function blockTime(e){
+  return e && e.horaI ? `<span class="block-time">${e.horaI}</span>` : '';
+}
+function blockHtml(e, key, di, si, extra){
+  const lbl = e.titulo||e.sub||e.cat;
+  return `<div class="block b-${e.cat}" draggable="true" ondragstart="oDS(event,'${key}',${di},${si})" ondragend="oDE(event)" ${extra||''}>
+    <span class="block-title">${lbl}</span>
+    <div class="block-footer">${blockTime(e)}${statusBadge(e)}</div>
+  </div>`;
+}
+function setNavTitle(title, year){
+  document.getElementById('nav-title').textContent = title;
+  const yrEl = document.getElementById('nav-year');
+  if(yrEl) yrEl.textContent = year || '';
 }
 function renderSemana(el){
   const dates=getDates();
   const m=dates[0],sun=dates[6];
-  document.getElementById('nav-title').textContent=m.getDate()+' '+MESES[m.getMonth()]+' – '+sun.getDate()+' '+MESES[sun.getMonth()]+' '+sun.getFullYear();
-  document.getElementById('main-title').textContent='Agenda Semanal';
+  setNavTitle(m.getDate()+' '+MESES[m.getMonth()]+' – '+sun.getDate()+' '+MESES[sun.getMonth()], sun.getFullYear());
+  
 
   let html='<div class="week-wrap"><table class="cal"><thead><tr><th class="th-time">Hora</th>';
   dates.forEach((d,i)=>{
@@ -522,11 +562,9 @@ function renderSemana(el){
       const e=getEntry(d,si,di);
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip[fkey(d,si+x)]=true;
-        const lbl=e.titulo||e.sub||e.cat;
-        html+=`<td class="slot" rowspan="${e.dur}" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"><div class="block b-${e.cat}" draggable="true" ondragstart="oDS(event,'${k}',${di},${si})" ondragend="oDE(event)">${lbl}${statusDot(e)}</div></td>`;
+        html+=`<td class="slot" rowspan="${e.dur}" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">${blockHtml(e,k,di,si)}</td>`;
       } else if(e){
-        const lbl=e.titulo||e.sub||e.cat;
-        html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"><div class="block b-${e.cat}" draggable="true" ondragstart="oDS(event,'${k}',${di},${si})" ondragend="oDE(event)">${lbl}${statusDot(e)}</div></td>`;
+        html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">${blockHtml(e,k,di,si)}</td>`;
       } else {
         html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></td>`;
       }
@@ -577,8 +615,8 @@ function renderDia(el){
   target.setDate(target.getDate()+off);
   const di=(target.getDay()+6)%7;
 
-  document.getElementById('nav-title').textContent=DAYS[di]+', '+target.getDate()+' '+MESES_L[target.getMonth()]+' '+target.getFullYear();
-  document.getElementById('main-title').textContent='Vista Diaria';
+  setNavTitle(DAYS[di]+', '+target.getDate()+' '+MESES_L[target.getMonth()], target.getFullYear());
+  
 
   let html=`<div style="height:100%;display:flex;flex-direction:column;overflow:hidden;">
     <div style="background:#1a1a1a;color:#f5f0e8;padding:8px 20px;display:flex;gap:20px;align-items:center;flex-shrink:0;">
@@ -597,19 +635,17 @@ function renderDia(el){
     const tcBg='background:#faf9f6;color:#888;';
     if(e&&e.dur>1){
       for(let x=1;x<e.dur;x++) skip[fkey(target,si+x)]=true;
-      const lbl=e.titulo||e.sub||e.cat;
       html+=`<div style="display:flex;height:calc(${rh} * ${e.dur});flex-shrink:0;border-bottom:1px solid #e0ddd8;">
         <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #e0ddd8;display:flex;align-items:flex-start;padding-top:4px;">${slot}</div>
         <div style="flex:1;padding:2px;cursor:pointer;background:#fff;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-          <div class="block b-${e.cat}" style="height:100%;" draggable="true" ondragstart="oDS(event,'${k}',${di},${si})" ondragend="oDE(event)">${lbl}${statusDot(e)}</div>
+          ${blockHtml(e,k,di,si,'style="height:100%;"')}
         </div>
       </div>`;
     } else if(e){
-      const lbl=e.titulo||e.sub||e.cat;
       html+=`<div style="display:flex;height:${rh};flex-shrink:0;border-bottom:1px solid #e0ddd8;">
         <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #e0ddd8;display:flex;align-items:center;">${slot}</div>
         <div style="flex:1;padding:2px;cursor:pointer;background:#fff;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-          <div class="block b-${e.cat}" style="height:100%;" draggable="true" ondragstart="oDS(event,'${k}',${di},${si})" ondragend="oDE(event)">${lbl}${statusDot(e)}</div>
+          ${blockHtml(e,k,di,si,'style="height:100%;"')}
         </div>
       </div>`;
     } else {
@@ -628,8 +664,8 @@ function renderMes(el){
   const today=new Date();
   const mo=(today.getMonth()+off+120)%12;
   const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+off)/12);
-  document.getElementById('nav-title').textContent=MESES_L[mo]+' '+yrAdj;
-  document.getElementById('main-title').textContent='Vista Mensual';
+  setNavTitle(MESES_L[mo], yrAdj);
+  
   const first=new Date(yrAdj,mo,1);
   const last=new Date(yrAdj,mo+1,0);
   let startDow=(first.getDay()+6)%7;
@@ -674,8 +710,8 @@ function goToDay(yr,mo,day){
 function renderAnio(el){
   const today=new Date();
   const yr=today.getFullYear()+off;
-  document.getElementById('nav-title').textContent=yr;
-  document.getElementById('main-title').textContent='Vista Anual';
+  setNavTitle(yr, '');
+  
   let html='<div class="year-wrap"><div class="year-grid">';
   for(let mo=0;mo<12;mo++){
     html+=`<div class="year-month"><div class="year-month-title">${MESES_L[mo]}</div><div class="year-month-grid">`;
@@ -708,67 +744,150 @@ function renderHabitos(el){
   const today=new Date();
   const mo=(today.getMonth()+off+120)%12;
   const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+off)/12);
-  document.getElementById('nav-title').textContent=MESES_L[mo]+' '+yrAdj;
-  document.getElementById('main-title').textContent='Seguimiento de Hábitos';
+  setNavTitle(MESES_L[mo], yrAdj);
   const last=new Date(yrAdj,mo+1,0);
+  const totalDias=last.getDate();
 
-  let html = '<div style="overflow:auto;height:100%;padding:12px 16px;">';
-  html += '<table style="border-collapse:collapse;width:100%;min-width:760px;font-size:11px;">';
-  html += '<thead><tr style="position:sticky;top:0;background:#1a1a1a;z-index:5;">';
-  html += '<th style="padding:5px 8px;color:#f5f0e8;text-align:left;border:1px solid #2a2a2a;">Día</th>';
-  HABITOS_DEF.forEach(h => {
-    html += `<th style="padding:5px 4px;color:#f5f0e8;font-size:10px;border:1px solid #2a2a2a;" title="${h.label}">${h.label}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-
-  for(let day=1; day<=last.getDate(); day++){
-    const d = new Date(yrAdj, mo, day);
-    const dow = DAYS_MIN[(d.getDay()+6)%7];
-    const fechaKey = d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
-    const isT = isToday(d);
-    html += `<tr${isT?' style="background:#EEEDFE;"':''}>`;
-    html += `<td style="padding:4px 8px;border:1px solid #e0ddd8;font-weight:600;white-space:nowrap;">${day} ${dow}</td>`;
-    HABITOS_DEF.forEach(h => {
-      const marcado = (habitosData[fechaKey] && habitosData[fechaKey][h.id]) || false;
-      const bg = marcado ? '#EAF3DE' : '#fff';
-      const color = marcado ? '#27500A' : '#ccc';
-      html += `<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:1px solid #e0ddd8;text-align:center;cursor:pointer;background:${bg};">`;
-      html += `<span style="color:${color};font-size:14px;">${marcado?'✓':'·'}</span></td>`;
+  // Calcular contadores por categoría
+  const catGroups = {
+    tri:  {label:'Triatlón', color:'#7C6FCD', fill:'#EEEDFE', ids:['pe','se','fu']},
+    sup:  {label:'Suplementos', color:'#888', fill:'#f5f4f0', ids:['cr','ca','e','p']},
+    alim: {label:'Alimentación', color:'#639922', fill:'#EAF3DE', ids:['a','c1','co','c2','ce']},
+    per:  {label:'Personal', color:'#D4537E', fill:'#FBEAF0', ids:['l']}
+  };
+  const counts = {tri:{done:0,total:0},sup:{done:0,total:0},alim:{done:0,total:0},per:{done:0,total:0}};
+  for(let day=1;day<=totalDias;day++){
+    const d=new Date(yrAdj,mo,day);
+    const fk=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+    Object.entries(catGroups).forEach(([cat,g])=>{
+      g.ids.forEach(id=>{
+        counts[cat].total++;
+        if(habitosData[fk]&&habitosData[fk][id]) counts[cat].done++;
+      });
     });
-    html += '</tr>';
   }
-  html += '</tbody></table>';
-  html += '<p style="font-size:11px;color:#888;margin-top:12px;">Primer/segundo entreno, fuerza, almuerzo, snacks, comida, cena y lectura se enlazan automáticamente con el bloque correspondiente en la agenda.</p>';
-  html += '</div>';
-  el.innerHTML = html;
+
+  // Header con contadores
+  let html='<div style="overflow:auto;height:100%;padding:12px 16px;">';
+  html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">';
+  Object.entries(catGroups).forEach(([cat,g])=>{
+    const pct=counts[cat].total>0?Math.round((counts[cat].done/counts[cat].total)*100):0;
+    html+=`<div style="background:${g.fill};border-radius:8px;padding:10px 12px;">
+      <div style="font-size:10px;color:${g.color};margin-bottom:2px;font-weight:500;">${g.label}</div>
+      <div style="font-size:20px;font-weight:600;color:${g.color};">${pct}%</div>
+      <div style="height:3px;background:#fff;border-radius:2px;margin-top:5px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${g.color};border-radius:2px;transition:width .3s;"></div>
+      </div>
+      <div style="font-size:9px;color:${g.color};opacity:.7;margin-top:3px;">${counts[cat].done}/${counts[cat].total}</div>
+    </div>`;
+  });
+  html+='</div>';
+
+  // Tabla de hábitos
+  const colColors = {tri:'#7C6FCD',sup:'#888',alim:'#639922',per:'#D4537E'};
+  const habCat = {pe:'tri',se:'tri',fu:'tri',cr:'sup',ca:'sup',e:'sup',p:'sup',a:'alim',c1:'alim',co:'alim',c2:'alim',ce:'alim',l:'per'};
+  const habFill = {tri:'#EEEDFE',sup:'#f5f4f0',alim:'#EAF3DE',per:'#FBEAF0'};
+
+  html+='<table style="border-collapse:collapse;width:100%;min-width:700px;font-size:11px;">';
+  html+='<thead><tr style="position:sticky;top:0;background:#1a1a1a;z-index:5;">';
+  html+='<th style="padding:5px 8px;color:#f5f0e8;text-align:left;border:1px solid #2a2a2a;min-width:48px;">Día</th>';
+  HABITOS_DEF.forEach(h=>{
+    const cat=habCat[h.id]||'sup';
+    html+=`<th style="padding:5px 4px;color:${colColors[cat]};font-size:10px;border:1px solid #2a2a2a;text-align:center;" title="${h.label}">${h.label}</th>`;
+  });
+  html+='</tr></thead><tbody>';
+
+  for(let day=1;day<=totalDias;day++){
+    const d=new Date(yrAdj,mo,day);
+    const dow=DAYS_MIN[(d.getDay()+6)%7];
+    const fechaKey=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+    const isT=isToday(d);
+    html+=`<tr${isT?' style="background:#EEEDFE;"':''}>`;
+    html+=`<td style="padding:4px 8px;border:1px solid #e0ddd8;font-weight:${isT?'600':'400'};white-space:nowrap;color:#1a1a1a;">${day} ${dow}</td>`;
+    HABITOS_DEF.forEach(h=>{
+      const cat=habCat[h.id]||'sup';
+      const marcado=(habitosData[fechaKey]&&habitosData[fechaKey][h.id])||false;
+      const bg=marcado?habFill[cat]:'#fff';
+      const color=marcado?colColors[cat]:'#ddd';
+      html+=`<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:1px solid #e0ddd8;text-align:center;cursor:pointer;background:${bg};">`;
+      html+=`<span style="color:${color};font-size:13px;">${marcado?'✓':'·'}</span></td>`;
+    });
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  html+='<p style="font-size:11px;color:#888;margin-top:12px;">Primer/segundo entreno, fuerza, almuerzo, snacks, comida, cena y lectura se enlazan automáticamente con el bloque correspondiente en la agenda.</p>';
+  html+='</div>';
+  el.innerHTML=html;
 }
 
 // ── PANEL ────────────────────────────────────────────────
+const CAT_LABELS = {tri:'Triatlón',nubo:'NUBO',trabajo:'Trabajo',alim:'Alimentación',personal:'Personal',break:'Break'};
+const CAT_BADGE_STYLES = {
+  tri:'background:#7C6FCD;color:#fff;',
+  nubo:'background:#378ADD;color:#fff;',
+  trabajo:'background:#378ADD;color:#fff;',
+  alim:'background:#639922;color:#fff;',
+  personal:'background:#D4537E;color:#fff;',
+  break:'background:#378ADD;color:#fff;'
+};
 function openPanel(key,lbl,di,si){
   akey=key; aSi=si;
   const dates=getDates();
   const diReal=di!==undefined?di:(off%7+7)%7;
   const e=getEntry(dates[diReal],si,diReal);
   aCat=e?e.cat:null; aSub=e?e.sub:null; aDur=e?e.dur:1;
+  const titulo=e&&e.titulo?e.titulo:(e?(e.sub||''):'');
   document.getElementById('panel-lbl').textContent=lbl;
-  document.getElementById('p-titulo').value=e&&e.titulo?e.titulo:(e?(e.sub||''):'');
+  document.getElementById('panel-titulo-display').textContent=titulo||'Nuevo bloque';
+  document.getElementById('p-titulo').value=titulo;
   document.getElementById('p-estado').value=e&&e.estado?e.estado:'';
   document.getElementById('p-tags').value=e&&e.tags?e.tags:'';
   document.getElementById('p-desc').value=e&&e.desc?e.desc:'';
   document.getElementById('p-dur').value=aDur;
   document.getElementById('p-hora-i').value=slotToTime(si);
   document.getElementById('p-hora-f').value=slotToTime(si+aDur);
-  updDur(); updCatBtns(); renderSubs();
+  // Badge de categoría en header
+  const badge=document.getElementById('panel-cat-badge');
+  if(aCat && CAT_LABELS[aCat]){
+    badge.textContent=CAT_LABELS[aCat];
+    badge.style.cssText=(CAT_BADGE_STYLES[aCat]||'')+'font-size:11px;border-radius:20px;padding:3px 10px;';
+    badge.style.display='inline-block';
+  } else { badge.style.display='none'; }
+  updDur(); updCatBtns(); renderSubs(); renderEstadoBtns(e&&e.estado?e.estado:'');
   document.getElementById('overlay').classList.add('open');
   document.getElementById('panel').classList.add('open');
   setTimeout(()=>document.getElementById('p-titulo').focus(),200);
+}
+function renderEstadoBtns(estadoActual){
+  const estados=[
+    {val:'',label:'Sin estado'},
+    {val:'pendiente',label:'Pendiente'},
+    {val:'progreso',label:'En progreso'},
+    {val:'completado',label:'✓ Completado'},
+    {val:'cancelado',label:'Cancelado'}
+  ];
+  document.getElementById('p-estado-btns').innerHTML=estados.map(s=>
+    `<button class="estado-btn${estadoActual===s.val?' sel-'+s.val:''}" onclick="selEstado('${s.val}')">${s.label}</button>`
+  ).join('');
+}
+function selEstado(val){
+  document.getElementById('p-estado').value=val;
+  renderEstadoBtns(val);
 }
 function closePanel(){
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('panel').classList.remove('open');
   akey=null;
 }
-function selCat(c){aCat=c;aSub=null;updCatBtns();renderSubs();}
+function selCat(c){
+  aCat=c; aSub=null; updCatBtns(); renderSubs();
+  const badge=document.getElementById('panel-cat-badge');
+  if(c && CAT_LABELS[c]){
+    badge.textContent=CAT_LABELS[c];
+    badge.style.cssText=(CAT_BADGE_STYLES[c]||'')+'font-size:11px;border-radius:20px;padding:3px 10px;';
+    badge.style.display='inline-block';
+  } else { badge.style.display='none'; }
+}
 function updCatBtns(){document.querySelectorAll('.cbtn').forEach(b=>{b.className='cbtn'+(b.dataset.c===aCat?' sel-'+b.dataset.c:'');});}
 function renderSubs(){
   const el=document.getElementById('p-subs');
