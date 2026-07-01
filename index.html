@@ -834,11 +834,12 @@ async function sincronizarHabitoDesdeBloque(key, entry){
   const fechaKey = parts.slice(0,3).join('-');
   const si = parseInt(parts[3]);
   const completado = entry.estado === 'completado';
-  // Buscar por subcategoría exacta (sub o titulo)
+  console.log('[HABITO-SYNC] key:', key, '| fechaKey:', fechaKey, '| si:', si, '| cat:', entry.cat, '| sub:', entry.sub, '| titulo:', entry.titulo, '| completado:', completado);
   let habitoDef = HABITOS_DEF.find(h => h.linkType==='sub' && (h.linkSub===entry.sub || h.linkSub===entry.titulo));
   if(!habitoDef && entry.cat === 'tri'){
     habitoDef = HABITOS_DEF.find(h => h.linkType === (si < 24 ? 'triatlon-am' : 'triatlon-pm'));
   }
+  console.log('[HABITO-SYNC] habitoDef encontrado:', habitoDef ? habitoDef.id : 'NINGUNO');
   if(habitoDef) await guardarHabito(fechaKey, habitoDef.id, completado);
 }
 async function clrCell(){
