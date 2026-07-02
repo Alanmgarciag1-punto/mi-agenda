@@ -51,7 +51,7 @@ table.cal thead tr:nth-child(2) th{background:#1a1a1a;color:#555;font-size:10px;
 table.cal thead tr:nth-child(2) th.th-time{background:#141414;color:#444;}
 .loc-input{background:transparent;border:none;color:#555;font-size:10px;font-weight:500;width:100%;text-align:center;outline:none;font-family:'Inter',system-ui,sans-serif;}
 .loc-input:focus{background:#1e1e1e;border-radius:3px;color:#f0ede8;}
-table.cal td.tc{font-size:9px;color:#444;text-align:right;padding:0 5px 0 2px;border:0.5px solid #1a1a1a;background:#111;white-space:nowrap;overflow:hidden;height:calc((100vh - 82px - 40px) / 38);}
+table.cal td.tc{font-size:9px;color:#666;text-align:right;padding:0 5px 0 2px;border:0.5px solid #1a1a1a;background:#111;white-space:nowrap;overflow:hidden;height:calc((100vh - 82px - 40px) / 38);}
 table.cal td.slot{border:0.5px solid #1a1a1a;padding:1px;cursor:pointer;vertical-align:top;background:#111;overflow:hidden;transition:background .1s;height:calc((100vh - 82px - 40px) / 38);}
 table.cal td.slot:hover{background:#1a1a1a;}
 table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6FCD;outline-offset:-2px;}
@@ -541,10 +541,6 @@ function renderSemana(el){
     const bg=isToday(d)?'style="background:#2a2a2a"':'';
     html+=`<th ${bg}>${DAYS_S[i]} ${d.getDate()}</th>`;
   });
-  html+='</tr><tr><th class="th-time" style="background:#1a1a1a;color:#666">Ubic.</th>';
-  dates.forEach((_,i)=>{
-    html+=`<th style="background:#EDE8E0"><input class="loc-input" value="${locs[i]}" onchange="locs[${i}]=this.value;guardarLocs()" /></th>`;
-  });
   html+='</tr></thead><tbody>';
 
   const skip={};
@@ -616,7 +612,7 @@ function renderDia(el){
     <div style="background:#1a1a1a;color:#f5f0e8;padding:8px 20px;display:flex;gap:20px;align-items:center;flex-shrink:0;">
       <span style="font-size:18px;font-weight:600;">${DAYS[di]}</span>
       <span style="font-size:12px;color:#f5f0e880;">${target.getDate()} de ${MESES_L[target.getMonth()]} ${target.getFullYear()}</span>
-      <span style="font-size:11px;color:#f5f0e860;margin-left:auto;">${locs[di]}</span>
+      <span style="font-size:12px;color:#f0ede850;margin-left:auto;">León, Gto.</span>
     </div>
     <div style="flex:1;overflow:auto;">`;
 
