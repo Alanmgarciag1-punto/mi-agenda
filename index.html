@@ -169,7 +169,6 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
     <button onclick="navNext()">→</button>
   </div>
   <div class="view-btns">
-    <button class="vbtn" onclick="setView('dia')">Día</button>
     <button class="vbtn active" onclick="setView('semana')">Semana</button>
     <button class="vbtn" onclick="setView('mes')">Mes</button>
     <button class="vbtn" onclick="setView('año')">Año</button>
@@ -496,7 +495,7 @@ function getDayEntries(d){
 function setView(v){
   view=v;
   localStorage.setItem('agenda_view', v);
-  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos',hoy:'Hoy'}[v])));
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',mes:'Mes','año':'Año',habitos:'Hábitos',hoy:'Hoy'}[v])));
   render();
 }
 function navPrev(){
@@ -739,120 +738,157 @@ function renderAnio(el){
   el.innerHTML=html;
 }
 
-// ── VISTA HÁBITOS ─────────────────────────────────────────
 // ── VISTA HOY ─────────────────────────────────────────────
 function renderHoy(el){
-  const today=new Date();
-  const di=(today.getDay()+6)%7;
-  const fechaKey=today.getFullYear()+'-'+today.getMonth()+'-'+today.getDate();
-  setNavTitle(DAYS[di]+', '+today.getDate()+' de '+MESES_L[today.getMonth()], today.getFullYear());
+  const base=new Date();
+  base.setHours(0,0,0,0);
+  const target=new Date(base);
+  target.setDate(target.getDate()+dayOff);
+  const di=(target.getDay()+6)%7;
+  const fechaKey=target.getFullYear()+'-'+target.getMonth()+'-'+target.getDate();
+  const esHoy=dayOff===0;
+  setNavTitle(DAYS[di]+', '+target.getDate()+' de '+MESES_L[target.getMonth()], target.getFullYear());
 
-  // Recopilar bloques del día
-  const entries=[];
-  const skip={};
-  for(let si=0;si<SLOTS.length;si++){
-    if(skip[fkey(today,si)]) continue;
-    const e=getEntry(today,si,di);
-    if(e){
-      for(let x=1;x<(e.dur||1);x++) skip[fkey(today,si+x)]=true;
-      entries.push({si,e,key:fkey(today,si)});
-    }
-  }
-
-  // Contar completados/pendientes
-  const completados=entries.filter(x=>x.e.estado==='completado').length;
-  const pendientes=entries.filter(x=>x.e.estado!=='completado'&&x.e.estado!=='cancelado').length;
-  const total=entries.length;
-  const pct=total>0?Math.round((completados/total)*100):0;
-
-  // Hábitos del día
   const habCat={pe:'tri',se:'tri',fu:'tri',cr:'sup',ca:'sup',e:'sup',p:'sup',a:'alim',c1:'alim',co:'alim',c2:'alim',ce:'alim',l:'per'};
   const catColor={tri:'#B8AEFF',sup:'#888',alim:'#8FD44F',per:'#FF8FB3'};
   const catBg={tri:'#2a2047',sup:'#1e1e1e',alim:'#162016',per:'#1e1228'};
+  const catBorder={tri:'#7C6FCD44',sup:'#33333344',alim:'#63992244',per:'#D4537E44'};
+
+  // Contar completados
+  const allEntries=[];
+  for(let si=0;si<SLOTS.length;si++){
+    const e=getEntry(target,si,di);
+    if(e) allEntries.push({si,e});
+  }
+  const completados=allEntries.filter(x=>x.e.estado==='completado').length;
+  const pendientes=allEntries.filter(x=>x.e.estado!=='completado'&&x.e.estado!=='cancelado').length;
+  const total=allEntries.length;
+  const pct=total>0?Math.round((completados/total)*100):0;
 
   const isMobile=window.innerWidth<600;
 
-  let html='<div style="overflow:auto;height:100%;background:#111;">';
+  let html=`<div style="height:100%;display:flex;flex-direction:column;background:#111;">`;
 
-  // Header de hoy
-  html+=`<div style="background:#0d0d0d;padding:14px 20px;border-bottom:0.5px solid #1e1e1e;">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <div>
-        <div style="color:#f0ede8;font-size:16px;font-weight:600;letter-spacing:-.02em;">${DAYS[di]}, ${today.getDate()} de ${MESES_L[today.getMonth()]}</div>
-        <div style="color:#ffffff25;font-size:11px;margin-top:2px;">León, Gto.</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <span style="background:#162016;color:#8FD44F;border-radius:20px;padding:3px 10px;font-size:11px;">${completados} ✓</span>
-        <span style="background:#2a1a1a;color:#FF8888;border-radius:20px;padding:3px 10px;font-size:11px;">${pendientes} pendientes</span>
-        <span style="background:#1e1e1e;color:#f0ede8;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${pct}%</span>
-      </div>
-    </div>
+  // Subheader con contadores
+  html+=`<div style="background:#0d0d0d;padding:8px 16px;border-bottom:0.5px solid #1e1e1e;display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;">
+    <span style="background:#162016;color:#8FD44F;border-radius:20px;padding:3px 10px;font-size:11px;">${completados} ✓</span>
+    <span style="background:#2a1a1a;color:#FF8888;border-radius:20px;padding:3px 10px;font-size:11px;">${pendientes} pendientes</span>
+    <span style="background:#1e1e1e;color:#f0ede8;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${pct}%</span>
+    ${esHoy?'<span style="background:#2a1f0a;color:#E0A93E;border-radius:20px;padding:3px 10px;font-size:11px;">Hoy</span>':''}
   </div>`;
 
   if(isMobile){
-    // ── CELULAR: hábitos como tarjetas deslizables + agenda abajo ──
-    html+=`<div style="padding:10px 12px;border-bottom:0.5px solid #1e1e1e;">
-      <div style="font-size:9px;color:#444;font-weight:500;margin-bottom:7px;letter-spacing:.05em;text-transform:uppercase;">Hábitos de hoy · desliza →</div>
+    // ── CELULAR ──
+    html+=`<div style="padding:10px 12px;border-bottom:0.5px solid #1e1e1e;flex-shrink:0;">
+      <div style="font-size:9px;color:#444;font-weight:500;margin-bottom:7px;letter-spacing:.05em;text-transform:uppercase;">Hábitos · desliza →</div>
       <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">`;
     HABITOS_DEF.forEach(h=>{
       const marcado=(habitosData[fechaKey]&&habitosData[fechaKey][h.id])||false;
       const cat=habCat[h.id]||'sup';
-      const bg=marcado?catBg[cat]:'#1a1a1a';
-      const color=marcado?catColor[cat]:'#2a2a2a';
-      const check=marcado?`<div style="font-size:16px;color:#4CAF50;margin-bottom:3px;">✓</div>`:`<div style="font-size:16px;color:#2a2a2a;margin-bottom:3px;">·</div>`;
-      html+=`<div onclick="toggleHabito('${fechaKey}','${h.id}')" style="flex-shrink:0;width:76px;border-radius:12px;padding:9px 6px;text-align:center;cursor:pointer;background:${bg};border:0.5px solid ${marcado?catColor[cat]+'44':'#2a2a2a'};">
-        ${check}
+      html+=`<div onclick="toggleHabito('${fechaKey}','${h.id}')" style="flex-shrink:0;width:76px;border-radius:12px;padding:9px 6px;text-align:center;cursor:pointer;background:${marcado?catBg[cat]:'#1a1a1a'};border:0.5px solid ${marcado?catBorder[cat]:'#2a2a2a'};">
+        <div style="font-size:16px;color:${marcado?'#4CAF50':'#2a2a2a'};margin-bottom:3px;">${marcado?'✓':'·'}</div>
         <div style="font-size:9px;color:${marcado?catColor[cat]:'#333'};font-weight:500;">${h.label}</div>
       </div>`;
     });
     html+=`</div></div>`;
-
-    // Agenda vertical
-    html+=`<div style="padding:10px 12px;">
-      <div style="font-size:9px;color:#444;font-weight:500;margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase;">Agenda de hoy</div>
-      <div style="display:flex;flex-direction:column;gap:4px;">`;
-    entries.forEach(({si,e,key})=>{
-      const dotColor=e.estado==='completado'?'#4CAF50':e.estado==='cancelado'?'#444':'#E0A93E';
-      html+=`<div style="display:flex;gap:8px;align-items:center;" onclick="openPanel('${key}','${DAYS[di]} · ${SLOTS[si]}',${di},${si})">
-        <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0;"></div>
-        <div style="flex:1;background:var(--block-bg-${e.cat},#1a1a1a);border-left:3px solid ${CAT_COLORS[e.cat]||'#444'};border-radius:8px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" class="b-${e.cat}">
-          <div>
-            <div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
-            <div style="font-size:9px;opacity:.5;">${e.horaI||slotToTime(si)}</div>
+    // Línea de tiempo móvil
+    html+=`<div style="flex:1;overflow:auto;padding:8px 12px;">`;
+    const skip={};
+    SLOTS.forEach((slot,si)=>{
+      const k=fkey(target,si);
+      if(skip[k]){html+=``;return;}
+      const e=getEntry(target,si,di);
+      const tcBg=esHoy&&isCurrentSlot(si)?'background:#2a1f0a;':'';
+      if(e&&e.dur>1){
+        for(let x=1;x<e.dur;x++) skip[fkey(target,si+x)]=true;
+        html+=`<div style="display:flex;gap:8px;margin-bottom:2px;align-items:stretch;">
+          <div style="width:52px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding-top:6px;${tcBg}">${slot}</div>
+          <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+            <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;min-height:${e.dur*30}px;">
+              <div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
+              <div style="font-size:9px;opacity:.4;">${e.horaI||slot} – ${e.horaF||slotToTime(si+e.dur)}</div>
+              ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:9px;border-radius:20px;padding:1px 6px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
+            </div>
           </div>
-          ${e.estado?`<span style="font-size:9px;border-radius:20px;padding:1px 6px;" class="block-badge badge-${e.estado}">${e.estado==='completado'?'✓':e.estado}</span>`:''}
-        </div>
-      </div>`;
+        </div>`;
+      } else if(e){
+        html+=`<div style="display:flex;gap:8px;margin-bottom:2px;align-items:center;">
+          <div style="width:52px;flex-shrink:0;font-size:9px;color:#888;text-align:right;${tcBg}">${slot}</div>
+          <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+            <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slot}</div></div>
+              ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:9px;border-radius:20px;padding:1px 6px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      } else {
+        html+=`<div style="display:flex;gap:8px;margin-bottom:1px;align-items:center;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+          <div style="width:52px;flex-shrink:0;font-size:9px;color:#555;text-align:right;${tcBg}">${slot}</div>
+          <div style="flex:1;height:20px;border-radius:4px;cursor:pointer;border-left:2px solid transparent;" onmouseover="this.style.borderLeftColor='#333';this.style.background='#1a1a1a'" onmouseout="this.style.borderLeftColor='transparent';this.style.background='transparent'"></div>
+        </div>`;
+      }
     });
-    html+=`</div></div>`;
+    html+=`</div>`;
 
   } else {
-    // ── COMPUTADORA: dos columnas ──
-    html+=`<div style="display:grid;grid-template-columns:1fr 320px;height:calc(100% - 80px);overflow:hidden;">`;
+    // ── COMPUTADORA: línea de tiempo + hábitos ──
+    html+=`<div style="display:grid;grid-template-columns:1fr 280px;flex:1;overflow:hidden;">`;
 
-    // Columna izquierda: Agenda
-    html+=`<div style="border-right:0.5px solid #1e1e1e;overflow:auto;padding:16px 20px;">
-      <div style="font-size:11px;color:#555;font-weight:500;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;">Agenda del día</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">`;
-    entries.forEach(({si,e,key})=>{
-      const dotColor=e.estado==='completado'?'#4CAF50':e.estado==='cancelado'?'#333':'#E0A93E';
-      html+=`<div style="display:flex;gap:10px;align-items:center;cursor:pointer;" onclick="openPanel('${key}','${DAYS[di]} · ${SLOTS[si]}',${di},${si})">
-        <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0;box-shadow:0 0 6px ${dotColor}88;"></div>
-        <div style="flex:1;border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;" class="b-${e.cat}">
-          <div>
-            <div style="font-size:13px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
-            <div style="font-size:10px;opacity:.5;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+(e.dur||1))}</div>
+    // Columna izquierda: línea de tiempo completa
+    html+=`<div style="border-right:0.5px solid #1e1e1e;overflow:auto;position:relative;" id="hoy-timeline">`;
+    const skip2={};
+    SLOTS.forEach((slot,si)=>{
+      const k=fkey(target,si);
+      if(skip2[k]) return;
+      const e=getEntry(target,si,di);
+      const tcBg=esHoy&&isCurrentSlot(si)?'background:#1a1a10;':'';
+      if(e&&e.dur>1){
+        for(let x=1;x<e.dur;x++) skip2[fkey(target,si+x)]=true;
+        html+=`<div style="display:flex;border-bottom:0.5px solid #222;min-height:${e.dur*28}px;">
+          <div style="width:60px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slot}</div>
+          <div style="flex:1;padding:2px;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+            <div class="b-${e.cat}" style="height:100%;border-radius:6px;padding:5px 8px;">
+              <div style="font-size:11px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
+              <div style="font-size:9px;opacity:.4;">${e.horaI||slot} – ${e.horaF||slotToTime(si+e.dur)}</div>
+              ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:8px;border-radius:20px;padding:1px 5px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
+            </div>
           </div>
-          ${e.estado?`<span style="font-size:10px;border-radius:20px;padding:2px 8px;" class="block-badge badge-${e.estado}">${e.estado==='completado'?'✓ listo':e.estado}</span>`:''}
-        </div>
-      </div>`;
+        </div>`;
+      } else if(e){
+        html+=`<div style="display:flex;border-bottom:0.5px solid #222;min-height:28px;">
+          <div style="width:60px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slot}</div>
+          <div style="flex:1;padding:2px;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+            <div class="b-${e.cat}" style="border-radius:6px;padding:5px 8px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div style="font-size:11px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slot} – ${e.horaF||slotToTime(si+1)}</div></div>
+              ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:8px;border-radius:20px;padding:1px 5px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      } else {
+        html+=`<div style="display:flex;border-bottom:0.5px solid #1a1a1a;min-height:28px;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})" onmouseover="this.querySelector('.slot-hint').style.opacity=1;this.style.background='#141414'" onmouseout="this.querySelector('.slot-hint').style.opacity=0;this.style.background='transparent'">
+          <div style="width:60px;flex-shrink:0;font-size:9px;color:#555;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slot}</div>
+          <div style="flex:1;padding:3px 8px;display:flex;align-items:center;">
+            <span class="slot-hint" style="font-size:10px;color:#333;opacity:0;transition:opacity .15s;">+ agregar</span>
+          </div>
+        </div>`;
+      }
     });
-    html+=`</div></div>`;
+    // Línea de hora actual
+    if(esHoy){
+      const now=new Date();
+      const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
+      if(totalMins>=0&&totalMins<=19*60){
+        const slotIdx=Math.floor(totalMins/30);
+        html+=`<div id="hoy-time-line" data-slot="${slotIdx}" style="height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;position:sticky;top:0;z-index:10;pointer-events:none;margin-top:-2px;">
+          <div style="position:absolute;left:58px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 8px #E24B4A;"></div>
+        </div>`;
+      }
+    }
+    html+=`</div>`;
 
-    // Columna derecha: Hábitos
-    html+=`<div style="overflow:auto;padding:16px;">
-      <div style="font-size:11px;color:#555;font-weight:500;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;">Hábitos de hoy</div>`;
-
+    // Columna derecha: hábitos
+    html+=`<div style="overflow:auto;padding:14px 12px;">
+      <div style="font-size:10px;color:#555;font-weight:500;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;">Hábitos de hoy</div>`;
     const groups=[
       {label:'Triatlón',color:'#B8AEFF',ids:['pe','se','fu']},
       {label:'Suplementos',color:'#888',ids:['cr','ca','e','p']},
@@ -860,24 +896,42 @@ function renderHoy(el){
       {label:'Personal',color:'#FF8FB3',ids:['l']}
     ];
     groups.forEach(g=>{
-      html+=`<div style="font-size:10px;color:${g.color};font-weight:500;margin:10px 0 5px;letter-spacing:.03em;">${g.label}</div>`;
+      html+=`<div style="font-size:10px;color:${g.color};font-weight:500;margin:10px 0 4px;">${g.label}</div>`;
       g.ids.forEach(id=>{
         const hDef=HABITOS_DEF.find(h=>h.id===id);
         if(!hDef) return;
         const marcado=(habitosData[fechaKey]&&habitosData[fechaKey][id])||false;
         const cat=habCat[id]||'sup';
-        html+=`<div onclick="toggleHabito('${fechaKey}','${id}')" style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;margin-bottom:3px;cursor:pointer;background:${marcado?catBg[cat]:'#1a1a1a'};border:0.5px solid ${marcado?catColor[cat]+'44':'#2a2a2a'};">
-          <span style="font-size:12px;color:${marcado?catColor[cat]:'#555'};">${hDef.label}</span>
-          <span style="font-size:14px;color:${marcado?'#4CAF50':'#2a2a2a'};">${marcado?'✓':'·'}</span>
+        html+=`<div onclick="toggleHabito('${fechaKey}','${id}')" style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;margin-bottom:3px;cursor:pointer;background:${marcado?catBg[cat]:'#1a1a1a'};border:0.5px solid ${marcado?catBorder[cat]:'#2a2a2a'};">
+          <span style="font-size:12px;color:${marcado?catColor[cat]:'#666'};">${hDef.label}</span>
+          <span style="font-size:14px;color:${marcado?'#4CAF50':'#333'};">${marcado?'✓':'·'}</span>
         </div>`;
       });
     });
     html+=`</div></div>`;
   }
 
-  html+='</div>';
+  html+=`</div>`;
   el.innerHTML=html;
+
+  // Scroll automático a la hora actual en desktop
+  if(esHoy&&!isMobile){
+    const now=new Date();
+    const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
+    if(totalMins>60){
+      const tl=document.getElementById('hoy-timeline');
+      if(tl) setTimeout(()=>{ tl.scrollTop=Math.max(0,(totalMins/30-2)*28); },100);
+    }
+  }
 }
+
+function isCurrentSlot(si){
+  const now=new Date();
+  const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
+  return totalMins>=si*30&&totalMins<(si+1)*30;
+}
+
+
 
 function renderHabitos(el){
   const today=new Date();
