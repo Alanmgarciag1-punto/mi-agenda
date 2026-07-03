@@ -558,22 +558,18 @@ function renderSemana(el){
 
   const skip={};
   SLOTS.forEach((slot,si)=>{
-    const isCurrentRow=isCurrentSlot(si);
-    const rowBg=isCurrentRow?'style="background:#1e1e0a;"':'';
-    const tcColor=isCurrentRow?'style="color:#E0A93E;background:#2a1f0a;"':'';
-    html+=`<tr ${rowBg}><td class="tc" ${tcColor}>${slot}</td>`;
+    html+=`<tr><td class="tc">${slot}</td>`;
     dates.forEach((d,di)=>{
       const k=fkey(d,si);
       if(skip[k]){return;}
       const e=getEntry(d,si,di);
-      const slotBg=isCurrentRow&&!e?'style="background:#1a1a0a;"':'';
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip[fkey(d,si+x)]=true;
         html+=`<td class="slot" rowspan="${e.dur}" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">${blockHtml(e,k,di,si)}</td>`;
       } else if(e){
         html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">${blockHtml(e,k,di,si)}</td>`;
       } else {
-        html+=`<td class="slot" ${slotBg} ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></td>`;
+        html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></td>`;
       }
     });
     html+='</tr>';
