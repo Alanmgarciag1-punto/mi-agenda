@@ -279,7 +279,7 @@ const SUBS = {
   nubo:    ['Captación','Seguimiento','Propuestas','Redes','Visitas','Admin','Junta'],
   trabajo: ['Consultoría','Análisis','Reunión','Family Office','Reportes'],
   alim:    ['Desayuno','Comida','Cena','Pre-entreno','Snack mañana','Snack tarde','Suplementos'],
-  personal:['Familia','Lectura','Trámites','Evento familiar'],
+  personal:['Familia','Lectura','Trámites','Evento familiar','Mafer','Inicia el día','Cocina'],
   break:   ['Break','Siesta','Descanso activo']
 };
 
@@ -299,6 +299,7 @@ const TMPL = [
 // ── ESTADO ───────────────────────────────────────────────
 let view = localStorage.getItem('agenda_view') || 'semana';
 let off  = parseInt(localStorage.getItem('agenda_off')||'0');
+let dayOff = 0; // offset en días para vista Día
 let data = {};
 let locs = ['León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.'];
 let habitosData = {};
@@ -498,8 +499,14 @@ function setView(v){
   document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos',hoy:'Hoy'}[v])));
   render();
 }
-function navPrev(){off--;localStorage.setItem('agenda_off',off);render();}
-function navNext(){off++;localStorage.setItem('agenda_off',off);render();}
+function navPrev(){
+  if(view==='dia'){ dayOff--; render(); }
+  else { off--; localStorage.setItem('agenda_off',off); render(); }
+}
+function navNext(){
+  if(view==='dia'){ dayOff++; render(); }
+  else { off++; localStorage.setItem('agenda_off',off); render(); }
+}
 
 // ── RENDER ───────────────────────────────────────────────
 function render(){
@@ -609,12 +616,9 @@ window._timeLineInterval=setInterval(dibujarLineaTiempo, 60000);
 // ── VISTA DÍA ────────────────────────────────────────────
 function renderDia(el){
   const today=new Date();
-  const monToday=new Date(today);
-  const dowT=(monToday.getDay()+6)%7;
-  monToday.setDate(monToday.getDate()-dowT);
-  monToday.setHours(0,0,0,0);
-  const target=new Date(monToday);
-  target.setDate(target.getDate()+off);
+  today.setHours(0,0,0,0);
+  const target=new Date(today);
+  target.setDate(target.getDate()+dayOff);
   const di=(target.getDay()+6)%7;
 
   setNavTitle(DAYS[di]+', '+target.getDate()+' '+MESES_L[target.getMonth()], target.getFullYear());
@@ -695,16 +699,10 @@ function renderMes(el){
 
 function goToDay(yr,mo,day){
   const today=new Date();
+  today.setHours(0,0,0,0);
   const target=new Date(yr,mo,day);
-  const monOfTarget=new Date(target);
-  const dow=(monOfTarget.getDay()+6)%7;
-  monOfTarget.setDate(monOfTarget.getDate()-dow);
-  const monToday=new Date(today);
-  const dowT=(monToday.getDay()+6)%7;
-  monToday.setDate(monToday.getDate()-dowT);
-  monToday.setHours(0,0,0,0); monOfTarget.setHours(0,0,0,0);
-  const diffWeeks=Math.round((monOfTarget-monToday)/(7*86400000));
-  off=diffWeeks;
+  target.setHours(0,0,0,0);
+  dayOff=Math.round((target-today)/86400000);
   setView('dia');
 }
 
@@ -934,7 +932,7 @@ function renderHabitos(el){
   html+='<th style="padding:5px 8px;color:#f5f0e8;text-align:left;border:1px solid #2a2a2a;min-width:48px;">Día</th>';
   HABITOS_DEF.forEach(h=>{
     const cat=habCat[h.id]||'sup';
-    html+=`<th style="padding:5px 4px;color:${colColors[cat]};font-size:10px;border:1px solid #2a2a2a;text-align:center;" title="${h.label}">${h.label}</th>`;
+    html+=`<th style="padding:5px 4px;color:${colColors[cat]};font-size:10px;border:0.5px solid #222;text-align:center;" title="${h.label}">${h.label}</th>`;
   });
   html+='</tr></thead><tbody>';
 
@@ -943,14 +941,14 @@ function renderHabitos(el){
     const dow=DAYS_MIN[(d.getDay()+6)%7];
     const fechaKey=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
     const isT=isToday(d);
-    html+=`<tr${isT?' style="background:#EEEDFE;"':''}>`;
-    html+=`<td style="padding:4px 8px;border:1px solid #e0ddd8;font-weight:${isT?'600':'400'};white-space:nowrap;color:#1a1a1a;">${day} ${dow}</td>`;
+    html+=`<tr${isT?' style="background:#2a1f0a;"':''}>`;
+    html+=`<td style="padding:4px 8px;border:0.5px solid #222;font-weight:${isT?'600':'400'};white-space:nowrap;color:${isT?'#E0A93E':'#888'};">${day} ${dow}</td>`;
     HABITOS_DEF.forEach(h=>{
       const cat=habCat[h.id]||'sup';
       const marcado=(habitosData[fechaKey]&&habitosData[fechaKey][h.id])||false;
-      const bg=marcado?habFill[cat]:'#fff';
-      const color=marcado?colColors[cat]:'#ddd';
-      html+=`<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:1px solid #e0ddd8;text-align:center;cursor:pointer;background:${bg};">`;
+      const bg=marcado?habFill[cat]:'#111';
+      const color=marcado?colColors[cat]:'#333';
+      html+=`<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:0.5px solid #222;text-align:center;cursor:pointer;background:${bg};">`;
       html+=`<span style="color:${color};font-size:13px;">${marcado?'✓':'·'}</span></td>`;
     });
     html+='</tr>';
