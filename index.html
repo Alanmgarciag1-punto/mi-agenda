@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Agenda — Fernanda</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
@@ -19,7 +19,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#111;color:#f0ede8;disp
 #sync-status.loading{background:#1e1e1e;color:#888;}
 
 /* HEADER */
-.top-bar{background:#0d0d0d;color:#f0ede8;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;border-bottom:0.5px solid #1e1e1e;}
+.top-bar{background:#0d0d0d;color:#f0ede8;padding:10px 20px;padding-top:calc(10px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;border-bottom:0.5px solid #1e1e1e;}
 .top-bar h1{display:none;}
 .nav-area{display:flex;align-items:center;gap:10px;}
 .nav-date-main{font-size:15px;font-weight:500;color:#f0ede8;letter-spacing:-.01em;}
