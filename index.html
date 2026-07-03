@@ -499,11 +499,11 @@ function setView(v){
   render();
 }
 function navPrev(){
-  if(view==='dia'){ dayOff--; render(); }
+  if(view==='hoy'){ dayOff--; render(); }
   else { off--; localStorage.setItem('agenda_off',off); render(); }
 }
 function navNext(){
-  if(view==='dia'){ dayOff++; render(); }
+  if(view==='hoy'){ dayOff++; render(); }
   else { off++; localStorage.setItem('agenda_off',off); render(); }
 }
 
@@ -802,7 +802,7 @@ function renderHoy(el){
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip[fkey(target,si+x)]=true;
         html+=`<div style="display:flex;gap:8px;margin-bottom:2px;align-items:stretch;">
-          <div style="width:52px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding-top:6px;${tcBg}">${slot}</div>
+          <div style="width:52px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding-top:6px;${tcBg}">${slotToTime(si)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;min-height:${e.dur*30}px;">
               <div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
@@ -813,7 +813,7 @@ function renderHoy(el){
         </div>`;
       } else if(e){
         html+=`<div style="display:flex;gap:8px;margin-bottom:2px;align-items:center;">
-          <div style="width:52px;flex-shrink:0;font-size:9px;color:#888;text-align:right;${tcBg}">${slot}</div>
+          <div style="width:52px;flex-shrink:0;font-size:9px;color:#888;text-align:right;${tcBg}">${slotToTime(si)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
               <div><div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slot}</div></div>
@@ -823,7 +823,7 @@ function renderHoy(el){
         </div>`;
       } else {
         html+=`<div style="display:flex;gap:8px;margin-bottom:1px;align-items:center;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-          <div style="width:52px;flex-shrink:0;font-size:9px;color:#555;text-align:right;${tcBg}">${slot}</div>
+          <div style="width:52px;flex-shrink:0;font-size:9px;color:#555;text-align:right;${tcBg}">${slotToTime(si)}</div>
           <div style="flex:1;height:20px;border-radius:4px;cursor:pointer;border-left:2px solid transparent;" onmouseover="this.style.borderLeftColor='#333';this.style.background='#1a1a1a'" onmouseout="this.style.borderLeftColor='transparent';this.style.background='transparent'"></div>
         </div>`;
       }
@@ -845,7 +845,7 @@ function renderHoy(el){
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip2[fkey(target,si+x)]=true;
         html+=`<div style="display:flex;border-bottom:0.5px solid #222;min-height:${e.dur*28}px;">
-          <div style="width:60px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slot}</div>
+          <div style="width:60px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slotToTime(si)}</div>
           <div style="flex:1;padding:2px;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}" style="height:100%;border-radius:6px;padding:5px 8px;">
               <div style="font-size:11px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
@@ -856,7 +856,7 @@ function renderHoy(el){
         </div>`;
       } else if(e){
         html+=`<div style="display:flex;border-bottom:0.5px solid #222;min-height:28px;">
-          <div style="width:60px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slot}</div>
+          <div style="width:60px;flex-shrink:0;font-size:9px;color:#888;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slotToTime(si)}</div>
           <div style="flex:1;padding:2px;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}" style="border-radius:6px;padding:5px 8px;display:flex;justify-content:space-between;align-items:center;">
               <div><div style="font-size:11px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slot} – ${e.horaF||slotToTime(si+1)}</div></div>
@@ -866,24 +866,14 @@ function renderHoy(el){
         </div>`;
       } else {
         html+=`<div style="display:flex;border-bottom:0.5px solid #1a1a1a;min-height:28px;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})" onmouseover="this.querySelector('.slot-hint').style.opacity=1;this.style.background='#141414'" onmouseout="this.querySelector('.slot-hint').style.opacity=0;this.style.background='transparent'">
-          <div style="width:60px;flex-shrink:0;font-size:9px;color:#555;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slot}</div>
+          <div style="width:60px;flex-shrink:0;font-size:9px;color:#555;text-align:right;padding:5px 6px;border-right:0.5px solid #222;${tcBg}">${slotToTime(si)}</div>
           <div style="flex:1;padding:3px 8px;display:flex;align-items:center;">
             <span class="slot-hint" style="font-size:10px;color:#333;opacity:0;transition:opacity .15s;">+ agregar</span>
           </div>
         </div>`;
       }
     });
-    // Línea de hora actual
-    if(esHoy){
-      const now=new Date();
-      const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
-      if(totalMins>=0&&totalMins<=19*60){
-        const slotIdx=Math.floor(totalMins/30);
-        html+=`<div id="hoy-time-line" data-slot="${slotIdx}" style="height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;position:sticky;top:0;z-index:10;pointer-events:none;margin-top:-2px;">
-          <div style="position:absolute;left:58px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 8px #E24B4A;"></div>
-        </div>`;
-      }
-    }
+    // Línea de hora actual — se inserta via JS después del render
     html+=`</div>`;
 
     // Columna derecha: hábitos
@@ -914,13 +904,28 @@ function renderHoy(el){
   html+=`</div>`;
   el.innerHTML=html;
 
-  // Scroll automático a la hora actual en desktop
+  // Scroll automático y línea de hora actual en desktop
   if(esHoy&&!isMobile){
     const now=new Date();
     const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
-    if(totalMins>60){
+    if(totalMins>0&&totalMins<=19*60){
       const tl=document.getElementById('hoy-timeline');
-      if(tl) setTimeout(()=>{ tl.scrollTop=Math.max(0,(totalMins/30-2)*28); },100);
+      if(tl){
+        // Calcular posición en píxeles basada en altura real de filas
+        const rows=tl.querySelectorAll('div[style*="border-bottom"]');
+        const rowH=rows.length>0?rows[0].offsetHeight:28;
+        const topPx=(totalMins/30)*rowH;
+        // Insertar línea
+        const line=document.createElement('div');
+        line.style.cssText=`position:absolute;left:0;right:0;top:${topPx}px;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;`;
+        const dot=document.createElement('div');
+        dot.style.cssText=`position:absolute;left:58px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 8px #E24B4A;`;
+        line.appendChild(dot);
+        tl.style.position='relative';
+        tl.appendChild(line);
+        // Scroll a la hora actual
+        setTimeout(()=>{ tl.scrollTop=Math.max(0,topPx-100); },100);
+      }
     }
   }
 }
