@@ -1030,12 +1030,11 @@ document.addEventListener('keydown',e=>{
   document.addEventListener('touchend', function(e){
     if(!dragging) return;
     dragging=false;
+    if(view!=='dia') return;
     var dx=e.changedTouches[0].clientX-startX;
     var dy=e.changedTouches[0].clientY-startY;
-    if(Math.abs(dx)>120 && Math.abs(dx)>Math.abs(dy)*2.5){
-      if(view==='semana'||view==='dia'){
-        dx<0?navNext():navPrev();
-      }
+    if(Math.abs(dx)>80 && Math.abs(dx)>Math.abs(dy)*2){
+      dx<0?navNext():navPrev();
     }
   },{passive:true});
 })();
