@@ -570,19 +570,26 @@ function renderSemana(el){
 // ── LÍNEA DE HORA ACTUAL ──────────────────────────────────
 function dibujarLineaTiempo(){
   const now=new Date();
-  const totalMinsDesde5=(now.getHours()*60+now.getMinutes())-5*60;
+  const h=now.getHours();
+  const mn=now.getMinutes();
+  const totalMinsDesde5=(h*60+mn)-5*60;
   if(totalMinsDesde5<0||totalMinsDesde5>19*60) return;
-  const slotH=(100/38);
-  const pct=(totalMinsDesde5/30)*slotH;
   if(view==='semana'){
     const wrap=document.querySelector('.week-wrap');
     if(!wrap) return;
     const dates=getDates();
     const todayIdx=dates.findIndex(d=>isToday(d));
     if(todayIdx<0) return;
+    // Calcular posición basada en altura real de la tabla
+    const table=wrap.querySelector('table.cal');
+    if(!table) return;
+    const tableH=table.scrollHeight;
+    const theadH=table.querySelector('thead')?table.querySelector('thead').offsetHeight:0;
+    const bodyH=tableH-theadH;
+    const topPx=theadH+(bodyH*(totalMinsDesde5/(19*60)));
     const line=document.createElement('div');
     line.id='time-line';
-    line.style.cssText=`position:absolute;left:0;right:0;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;top:${pct}%;`;
+    line.style.cssText=`position:absolute;left:0;right:0;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;top:${topPx}px;`;
     const dot=document.createElement('div');
     dot.style.cssText=`position:absolute;left:0;width:10px;height:10px;background:#E24B4A;border-radius:50%;top:-4px;z-index:21;box-shadow:0 0 10px #E24B4A;`;
     line.appendChild(dot);
