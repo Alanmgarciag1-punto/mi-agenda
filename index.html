@@ -556,18 +556,22 @@ function renderSemana(el){
 
   const skip={};
   SLOTS.forEach((slot,si)=>{
-    html+=`<tr><td class="tc">${slot}</td>`;
+    const isCurrentRow=isCurrentSlot(si);
+    const rowBg=isCurrentRow?'style="background:#1e1e0a;"':'';
+    const tcColor=isCurrentRow?'style="color:#E0A93E;background:#2a1f0a;"':'';
+    html+=`<tr ${rowBg}><td class="tc" ${tcColor}>${slot}</td>`;
     dates.forEach((d,di)=>{
       const k=fkey(d,si);
       if(skip[k]){return;}
       const e=getEntry(d,si,di);
+      const slotBg=isCurrentRow&&!e?'style="background:#1a1a0a;"':'';
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip[fkey(d,si+x)]=true;
         html+=`<td class="slot" rowspan="${e.dur}" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">${blockHtml(e,k,di,si)}</td>`;
       } else if(e){
         html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">${blockHtml(e,k,di,si)}</td>`;
       } else {
-        html+=`<td class="slot" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></td>`;
+        html+=`<td class="slot" ${slotBg} ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></td>`;
       }
     });
     html+='</tr>';
@@ -838,9 +842,10 @@ function renderHoy(el){
     html+=`<div style="border-right:0.5px solid #222;overflow:hidden;background:#111;" id="hoy-horas">`;
     const slotH=36;
     SLOTS.forEach((slot,si)=>{
-      const e=getEntry(target,si,di);
-      const color=e?'#888':'#444';
-      html+=`<div style="height:${slotH}px;font-size:9px;color:${color};text-align:right;padding:0 8px;border-bottom:0.5px solid #1a1a1a;white-space:nowrap;display:flex;align-items:center;justify-content:flex-end;">${slot}</div>`;
+      const isCurrent=esHoy&&isCurrentSlot(si);
+      const color=isCurrent?'#E0A93E':'#888';
+      const bg=isCurrent?'background:#2a1f0a;':'';
+      html+=`<div style="height:${slotH}px;font-size:9px;color:${color};text-align:right;padding:0 8px;border-bottom:0.5px solid #1a1a1a;white-space:nowrap;display:flex;align-items:center;justify-content:flex-end;${bg}">${slot}</div>`;
     });
     html+=`</div>`;
 
@@ -927,8 +932,12 @@ function renderHoy(el){
         tl.style.position='relative';
         tl.appendChild(line);
       }
-      // Siempre iniciar desde arriba (5:00)
-      setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
+      // Scroll a hora actual
+      setTimeout(()=>{
+        const scrollTo = totalMins>0 ? Math.max(0,(totalMins/30)*slotH-150) : 0;
+        tl.scrollTop=scrollTo;
+        if(hl) hl.scrollTop=scrollTo;
+      },100);
     } else if(tl){
       setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
     }
