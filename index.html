@@ -832,7 +832,7 @@ function renderHoy(el){
 
   } else {
     // ── COMPUTADORA: 3 columnas — horas | actividades | hábitos ──
-    html+=`<div style="display:grid;grid-template-columns:90px 1fr 260px;flex:1;overflow:hidden;">`;
+    html+=`<div style="display:grid;grid-template-columns:90px 1fr 380px;flex:1;overflow:hidden;">`;
 
     // Columna horas (scroll sincronizado con actividades via JS)
     html+=`<div style="border-right:0.5px solid #222;overflow:hidden;background:#111;" id="hoy-horas">`;
@@ -926,12 +926,11 @@ function renderHoy(el){
         line.appendChild(dot);
         tl.style.position='relative';
         tl.appendChild(line);
-        setTimeout(()=>{ tl.scrollTop=Math.max(0,topPx-150); },150);
-      } else {
-        setTimeout(()=>{ tl.scrollTop=0; },150);
       }
+      // Siempre iniciar desde arriba (5:00)
+      setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
     } else if(tl){
-      setTimeout(()=>{ tl.scrollTop=0; },150);
+      setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
     }
   }
 }
