@@ -918,9 +918,9 @@ function renderHoy(el){
     if(tl&&hl) tl.addEventListener('scroll',()=>{ hl.scrollTop=tl.scrollTop; });
     if(esHoy&&tl){
       const now=new Date();
+      const slotH=36;
       const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
       if(totalMins>0&&totalMins<=19*60){
-        const slotH=36;
         const topPx=(totalMins/30)*slotH;
         const line=document.createElement('div');
         line.style.cssText=`position:absolute;left:0;right:0;top:${topPx}px;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;`;
@@ -929,13 +929,14 @@ function renderHoy(el){
         line.appendChild(dot);
         tl.style.position='relative';
         tl.appendChild(line);
+        setTimeout(()=>{
+          const scrollTo=Math.max(0,topPx-150);
+          tl.scrollTop=scrollTo;
+          if(hl) hl.scrollTop=scrollTo;
+        },100);
+      } else {
+        setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
       }
-      // Scroll a hora actual
-      setTimeout(()=>{
-        const scrollTo = totalMins>0 ? Math.max(0,(totalMins/30)*slotH-150) : 0;
-        tl.scrollTop=scrollTo;
-        if(hl) hl.scrollTop=scrollTo;
-      },100);
     } else if(tl){
       setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
     }
