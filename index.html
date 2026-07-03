@@ -1032,7 +1032,7 @@ document.addEventListener('keydown',e=>{
     dragging=false;
     var dx=e.changedTouches[0].clientX-startX;
     var dy=e.changedTouches[0].clientY-startY;
-    if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5){
+    if(Math.abs(dx)>120 && Math.abs(dx)>Math.abs(dy)*2.5){
       if(view==='semana'||view==='dia'){
         dx<0?navNext():navPrev();
       }
