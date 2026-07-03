@@ -909,23 +909,29 @@ function renderHoy(el){
   el.innerHTML=html;
 
   // Scroll automático y línea de hora actual en desktop
-  if(esHoy&&!isMobile){
+  if(!isMobile){
     const tl=document.getElementById('hoy-timeline');
     const hl=document.getElementById('hoy-horas');
     if(tl&&hl) tl.addEventListener('scroll',()=>{ hl.scrollTop=tl.scrollTop; });
-    const now=new Date();
-    const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
-    if(totalMins>0&&totalMins<=19*60&&tl){
-      const slotH=36;
-      const topPx=(totalMins/30)*slotH;
-      const line=document.createElement('div');
-      line.style.cssText=`position:absolute;left:0;right:0;top:${topPx}px;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;`;
-      const dot=document.createElement('div');
-      dot.style.cssText=`position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 8px #E24B4A;`;
-      line.appendChild(dot);
-      tl.style.position='relative';
-      tl.appendChild(line);
-      setTimeout(()=>{ tl.scrollTop=Math.max(0,topPx-120); },100);
+    if(esHoy&&tl){
+      const now=new Date();
+      const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
+      if(totalMins>0&&totalMins<=19*60){
+        const slotH=36;
+        const topPx=(totalMins/30)*slotH;
+        const line=document.createElement('div');
+        line.style.cssText=`position:absolute;left:0;right:0;top:${topPx}px;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;`;
+        const dot=document.createElement('div');
+        dot.style.cssText=`position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 8px #E24B4A;`;
+        line.appendChild(dot);
+        tl.style.position='relative';
+        tl.appendChild(line);
+        setTimeout(()=>{ tl.scrollTop=Math.max(0,topPx-150); },150);
+      } else {
+        setTimeout(()=>{ tl.scrollTop=0; },150);
+      }
+    } else if(tl){
+      setTimeout(()=>{ tl.scrollTop=0; },150);
     }
   }
 }
