@@ -240,10 +240,6 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
       <span class="plbl">Hora fin</span>
       <input type="time" class="pval-input" id="p-hora-f" step="1800" onchange="syncDurFromHoras()"/>
     </div>
-    <div class="prow">
-      <span class="plbl">Etiquetas</span>
-      <input type="text" class="pval-input" id="p-tags" placeholder="prioritario, recurrente..."/>
-    </div>
     <div class="prow" style="flex-direction:column;gap:6px;">
       <span class="plbl">Descripción</span>
       <textarea class="pval-desc" id="p-desc" placeholder="Agrega una descripción..."></textarea>
@@ -277,7 +273,7 @@ const CAT_COLORS = {tri:'#7C6FCD',nubo:'#378ADD',trabajo:'#378ADD',alim:'#639922
 
 const SUBS = {
   tri:     ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'],
-  nubo:    ['Captación','Seguimiento','Propuestas','Redes','Visitas','Admin','Junta'],
+  nubo:    ['Captación','Seguimiento','Propuestas','Redes','Visitas','Admin','Junta','Firma'],
   trabajo: ['Consultoría','Análisis','Reunión','Family Office','Reportes'],
   alim:    ['Desayuno','Comida','Cena','Pre-entreno','Snack mañana','Snack tarde'],
   personal:['Lectura','Trámites','Evento familiar','Mafer','Inicia el día','Cocinar'],
@@ -1076,7 +1072,7 @@ function openPanel(key,lbl,di,si){
   document.getElementById('panel-titulo-display').textContent=titulo||'Nuevo bloque';
   document.getElementById('p-titulo').value=titulo;
   document.getElementById('p-estado').value=e&&e.estado?e.estado:'';
-  document.getElementById('p-tags').value=e&&e.tags?e.tags:'';
+  
   document.getElementById('p-desc').value=e&&e.desc?e.desc:'';
   document.getElementById('p-dur').value=aDur;
   document.getElementById('p-hora-i').value=slotToTime(si);
@@ -1168,7 +1164,7 @@ async function saveCell(){
     titulo:document.getElementById('p-titulo').value.trim(),
     estado:document.getElementById('p-estado').value,
     horaI, horaF,
-    tags:document.getElementById('p-tags').value.trim(),
+    
     desc:document.getElementById('p-desc').value.trim(),
     dur:aDur
   };
