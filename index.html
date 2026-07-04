@@ -837,7 +837,7 @@ function renderHoy(el){
     html+=`<div style="display:grid;grid-template-columns:90px 1fr 380px;flex:1;overflow:hidden;">`;
 
     // Columna horas (scroll sincronizado con actividades via JS)
-    html+=`<div style="border-right:0.5px solid #222;overflow:hidden;background:#111;" id="hoy-horas">`;
+    html+=`<div style="border-right:0.5px solid #222;overflow:hidden;background:#111;height:100%;" id="hoy-horas">`;
     const slotH=36;
     SLOTS.forEach((slot,si)=>{
       const isCurrent=esHoy&&isCurrentSlot(si);
@@ -848,7 +848,7 @@ function renderHoy(el){
     html+=`</div>`;
 
     // Columna actividades
-    html+=`<div style="border-right:0.5px solid #1e1e1e;overflow:auto;position:relative;" id="hoy-timeline">`;
+    html+=`<div style="border-right:0.5px solid #1e1e1e;overflow:auto;position:relative;height:100%;" id="hoy-timeline">`;
     const skip2={};
     SLOTS.forEach((slot,si)=>{
       const k=fkey(target,si);
@@ -933,7 +933,7 @@ function renderHoy(el){
           const scrollTo=Math.max(0,topPx-150);
           tl.scrollTop=scrollTo;
           if(hl) hl.scrollTop=scrollTo;
-        },100);
+        },300);
       } else {
         setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
       }
