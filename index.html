@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>Agenda — Fernanda</title>
+<title>Agenda — Alan</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -806,7 +806,7 @@ function renderHoy(el){
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip[fkey(target,si+x)]=true;
         html+=`<div style="display:flex;gap:6px;margin-bottom:1px;align-items:stretch;min-height:${e.dur*slotHm}px;">
-          <div style="width:72px;flex-shrink:0;font-size:8px;text-align:right;padding-top:6px;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
+          <div style="width:62px;flex-shrink:0;font-size:8px;text-align:right;padding-top:6px;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;min-height:${e.dur*slotHm}px;">
               <div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
@@ -817,7 +817,7 @@ function renderHoy(el){
         </div>`;
       } else if(e){
         html+=`<div style="display:flex;gap:6px;margin-bottom:1px;align-items:center;min-height:${slotHm}px;">
-          <div style="width:72px;flex-shrink:0;font-size:8px;text-align:right;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
+          <div style="width:62px;flex-shrink:0;font-size:8px;text-align:right;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
               <div><div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)}</div></div>
@@ -827,7 +827,7 @@ function renderHoy(el){
         </div>`;
       } else {
         html+=`<div style="display:flex;gap:6px;margin-bottom:1px;align-items:center;min-height:${slotHm}px;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-          <div style="width:72px;flex-shrink:0;font-size:8px;text-align:right;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
+          <div style="width:62px;flex-shrink:0;font-size:8px;text-align:right;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
           <div style="flex:1;height:${slotHm}px;border-radius:4px;cursor:pointer;border-left:2px solid transparent;"></div>
         </div>`;
       }
@@ -921,13 +921,12 @@ function renderHoy(el){
       const slotH=36;
       const totalMins=(now.getHours()*60+now.getMinutes())-5*60;
       if(totalMins>0&&totalMins<=19*60){
-        const topPx=(totalMins/30)*slotH;
+        const topPx=Math.round((totalMins/30)*slotH);
         const line=document.createElement('div');
         line.style.cssText=`position:absolute;left:0;right:0;top:${topPx}px;height:2px;background:#E24B4A;box-shadow:0 0 6px #E24B4A88;z-index:20;pointer-events:none;`;
         const dot=document.createElement('div');
-        dot.style.cssText=`position:absolute;left:70px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 6px #E24B4A;`;
+        dot.style.cssText=`position:absolute;left:60px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E24B4A;box-shadow:0 0 6px #E24B4A;`;
         line.appendChild(dot);
-        tlm.style.position='relative';
         tlm.appendChild(line);
         requestAnimationFrame(()=>{
           requestAnimationFrame(()=>{ tlm.scrollTop=Math.max(0,topPx-150); });
