@@ -929,11 +929,13 @@ function renderHoy(el){
         line.appendChild(dot);
         tl.style.position='relative';
         tl.appendChild(line);
-        setTimeout(()=>{
-          const scrollTo=Math.max(0,topPx-150);
-          tl.scrollTop=scrollTo;
-          if(hl) hl.scrollTop=scrollTo;
-        },300);
+        requestAnimationFrame(()=>{
+          requestAnimationFrame(()=>{
+            const scrollTo=Math.max(0,topPx-150);
+            tl.scrollTop=scrollTo;
+            if(hl) hl.scrollTop=scrollTo;
+          });
+        });
       } else {
         setTimeout(()=>{ tl.scrollTop=0; if(hl) hl.scrollTop=0; },100);
       }
