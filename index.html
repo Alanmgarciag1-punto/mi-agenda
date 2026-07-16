@@ -66,17 +66,46 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 
 /* VISTA MENSUAL */
 .month-wrap{height:100%;overflow:auto;padding:12px 16px;}
+.month-layout{display:flex;gap:16px;align-items:flex-start;}
+.month-layout.mobile{flex-direction:column;}
+.month-main{flex:1;min-width:0;}
 .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
 .month-day-hdr{font-size:10px;font-weight:500;color:#444;text-align:center;padding:4px 0;text-transform:uppercase;}
 .month-day{background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:8px;padding:4px;min-height:80px;cursor:pointer;transition:all .1s;overflow:hidden;}
 .month-day:hover{border-color:#7C6FCD;background:#1e1a2e;}
 .month-day.today{border-color:#7C6FCD;border-width:1.5px;}
 .month-day.other-month{background:#141414;opacity:.4;}
+.month-day.placeable{border-color:#E0A93E;border-width:1.5px;box-shadow:0 0 0 1px #E0A93E33;cursor:pointer;}
+.month-day.placeable:hover{background:#2a1f0a;border-color:#E0A93E;}
 .month-day .mday-num{font-size:11px;font-weight:500;color:#888;margin-bottom:3px;}
 .month-day.today .mday-num{background:#7C6FCD;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;}
 .month-day .mday-dots{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:2px;}
 .month-day .mday-dot{width:6px;height:6px;border-radius:50%;}
 .month-day .mday-text{font-size:9px;color:#444;line-height:1.3;overflow:hidden;}
+.month-day .mday-pend{font-size:8px;color:#E0A93E;background:#2a1f0a;border-radius:3px;padding:0 3px;display:inline-block;margin-top:2px;}
+
+/* PANEL DE PENDIENTES */
+.pend-box{background:#141414;border-radius:10px;padding:10px 12px;flex-shrink:0;}
+.pend-box.desktop{width:230px;}
+.pend-box.mobile{width:100%;margin-top:12px;}
+.pend-hdr{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.pend-hdr-lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.05em;}
+.pend-chevron{font-size:11px;color:#555;transition:transform .2s;}
+.pend-chevron.open{transform:rotate(180deg);}
+.pend-list-wrap{overflow:hidden;max-height:0;transition:max-height .2s ease;}
+.pend-list-wrap.open{max-height:900px;margin-top:8px;}
+.pend-item{display:flex;align-items:center;gap:6px;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:6px;padding:6px 8px;margin-bottom:5px;transition:all .1s;}
+.pend-item.armado{background:#1e1a2e;border-color:#7C6FCD;}
+.pend-dot{color:#639922;font-size:10px;cursor:pointer;flex-shrink:0;}
+.pend-txt{font-size:11px;color:#ccc;flex:1;cursor:pointer;word-break:break-word;}
+.pend-item.armado .pend-txt{color:#B8AEFF;}
+.pend-icon{font-size:13px;color:#555;cursor:pointer;flex-shrink:0;padding:2px;}
+.pend-icon:hover{color:#f0ede8;}
+.pend-new{display:flex;align-items:center;gap:6px;border:0.5px dashed #333;border-radius:6px;padding:7px 8px;margin-top:2px;}
+.pend-new input{background:transparent;border:none;outline:none;color:#f0ede8;font-size:11px;flex:1;font-family:'Inter',system-ui,sans-serif;}
+.pend-new input::placeholder{color:#555;}
+.pend-hint{font-size:9px;color:#7C6FCD;margin-top:8px;line-height:1.4;min-height:12px;}
+.pend-empty{font-size:10px;color:#444;padding:6px 2px;}
 
 /* VISTA ANUAL */
 .year-wrap{height:100%;overflow:auto;padding:12px 16px;}
@@ -301,6 +330,11 @@ let data = {};
 let locs = ['León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.'];
 let habitosData = {};
 
+// ── PENDIENTES DEL MES ────────────────────────────────────
+let pendientes = []; // {id, texto, created_at}
+let pendListaOpen = false;    // estado del acordeón en móvil
+let pendModoColocacion = null; // pendiente actualmente "armado" para colocar {id, texto}
+
 const HABITOS_DEF = [
   {id:'pe', label:'Primer entreno', linkType:'triatlon-am'},
   {id:'se', label:'Segundo entreno', linkType:'triatlon-pm'},
@@ -318,6 +352,7 @@ const HABITOS_DEF = [
 ];
 const TRI_SUBS = ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'];
 let akey=null, aCat=null, aSub=null, aDur=1, aSi=0;
+let aPendienteOrigenId=null; // si el bloque que se está editando viene de un pendiente, guarda su id
 
 // ── SUPABASE: CARGAR ─────────────────────────────────────
 async function cargarDatos(){
@@ -343,12 +378,18 @@ async function cargarDatos(){
       habitosData[r.fecha_key][r.habito_id] = r.completado;
     });
 
+    // Cargar pendientes
+    const {data: pendRows, error: e4} = await sb.from('pendientes').select('id,texto,created_at').order('created_at',{ascending:true});
+    if(e4) throw e4;
+    pendientes = pendRows || [];
+
     showSync('✓ Sincronizado','ok');
   } catch(e) {
     console.error('Error cargando de Supabase:', e);
     // Fallback a localStorage
     data = JSON.parse(localStorage.getItem('agenda_data')||'{}');
     locs = JSON.parse(localStorage.getItem('agenda_locs')||'["León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto."]');
+    pendientes = JSON.parse(localStorage.getItem('agenda_pendientes')||'[]');
     showSync('⚠ Sin conexión (local)','err');
   }
   document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos'}[view])));
@@ -454,6 +495,94 @@ async function toggleHabito(fechaKey, habitoId){
   await guardarHabito(fechaKey, habitoId, nuevo);
   if(habitoDef.linkType) await aplicarEnlaceHabito(fechaKey, habitoDef, nuevo);
   render();
+}
+
+// ── PENDIENTES: CRUD ──────────────────────────────────────
+async function agregarPendiente(texto){
+  texto=(texto||'').trim();
+  if(!texto) return;
+  const tempId='tmp_'+Date.now();
+  const optimista={id:tempId, texto, created_at:new Date().toISOString()};
+  pendientes.push(optimista);
+  render();
+  try {
+    const {data:row, error} = await sb.from('pendientes').insert({texto}).select().single();
+    if(error) throw error;
+    const idx=pendientes.findIndex(p=>p.id===tempId);
+    if(idx>-1) pendientes[idx]=row;
+    localStorage.setItem('agenda_pendientes', JSON.stringify(pendientes));
+    showSync('✓ Guardado','ok');
+    render();
+  } catch(e){
+    console.error('Error agregando pendiente:', e);
+    localStorage.setItem('agenda_pendientes', JSON.stringify(pendientes));
+    showSync('⚠ Guardado local','err');
+  }
+}
+async function editarPendiente(id){
+  const p=pendientes.find(x=>x.id===id);
+  if(!p) return;
+  const nuevo=prompt('Editar pendiente:', p.texto);
+  if(nuevo===null) return;
+  const texto=nuevo.trim();
+  if(!texto) return;
+  p.texto=texto;
+  render();
+  try {
+    const {error} = await sb.from('pendientes').update({texto}).eq('id', id);
+    if(error) throw error;
+    showSync('✓ Guardado','ok');
+  } catch(e){
+    console.error('Error editando pendiente:', e);
+    localStorage.setItem('agenda_pendientes', JSON.stringify(pendientes));
+    showSync('⚠ Guardado local','err');
+  }
+}
+async function borrarPendiente(id){
+  pendientes = pendientes.filter(p=>p.id!==id);
+  if(pendModoColocacion && pendModoColocacion.id===id) pendModoColocacion=null;
+  render();
+  try {
+    const {error} = await sb.from('pendientes').delete().eq('id', id);
+    if(error) throw error;
+    showSync('✓ Eliminado','ok');
+  } catch(e){
+    console.error('Error borrando pendiente:', e);
+    localStorage.setItem('agenda_pendientes', JSON.stringify(pendientes));
+    showSync('⚠ Eliminado local','err');
+  }
+}
+function activarColocacion(id, texto){
+  if(pendModoColocacion && pendModoColocacion.id===id){
+    pendModoColocacion=null; // toca de nuevo para cancelar
+  } else {
+    pendModoColocacion={id, texto};
+  }
+  render();
+}
+function cancelarColocacion(){
+  pendModoColocacion=null;
+  render();
+}
+function togglePendList(){
+  pendListaOpen=!pendListaOpen;
+  render();
+}
+// Se llama cuando se toca/clic un día del mes mientras hay un pendiente armado
+function colocarPendienteEnDia(yr,mo,day){
+  if(!pendModoColocacion) return false;
+  const target=new Date(yr,mo,day);
+  const di=(target.getDay()+6)%7;
+  // Abre el panel de edición prellenado con el texto del pendiente, en el primer slot libre del día (5:00am por defecto)
+  const siInicial=0;
+  aPendienteOrigenId=pendModoColocacion.id;
+  const textoPend=pendModoColocacion.texto;
+  pendModoColocacion=null;
+  openPanel(fkey(target,siInicial), DAYS[di]+' · '+slotToTime(siInicial), di, siInicial);
+  // Prellenar el título con el texto del pendiente
+  document.getElementById('p-titulo').value=textoPend;
+  document.getElementById('panel-titulo-display').textContent=textoPend;
+  return true;
 }
 
 // ── HELPERS ──────────────────────────────────────────────
@@ -663,18 +792,56 @@ function renderDia(el){
 }
 
 // ── VISTA MES ────────────────────────────────────────────
+function renderPendientesBox(isMobile){
+  const cls = isMobile ? 'pend-box mobile' : 'pend-box desktop';
+  const listaAbierta = isMobile ? pendListaOpen : true; // en escritorio siempre visible
+  let html = `<div class="${cls}">`;
+  if(isMobile){
+    html += `<div class="pend-hdr" onclick="togglePendList()">
+      <span class="pend-hdr-lbl">Pendientes (${pendientes.length})</span>
+      <span class="pend-chevron${listaAbierta?' open':''}">▾</span>
+    </div>`;
+  } else {
+    html += `<div class="pend-hdr"><span class="pend-hdr-lbl">Pendientes (${pendientes.length})</span></div>`;
+  }
+  html += `<div class="pend-list-wrap${listaAbierta?' open':''}">`;
+  if(pendientes.length===0){
+    html += `<div class="pend-empty">No tienes pendientes. Agrega uno abajo.</div>`;
+  } else {
+    pendientes.forEach(p=>{
+      const armado = pendModoColocacion && pendModoColocacion.id===p.id;
+      html += `<div class="pend-item${armado?' armado':''}">
+        <span class="pend-dot" onclick="activarColocacion('${p.id}', ${JSON.stringify(p.texto)})">●</span>
+        <span class="pend-txt" onclick="activarColocacion('${p.id}', ${JSON.stringify(p.texto)})">${escapeHtml(p.texto)}</span>
+        <i class="pend-icon" onclick="event.stopPropagation();editarPendiente('${p.id}')" title="Editar">✎</i>
+        <i class="pend-icon" onclick="event.stopPropagation();borrarPendiente('${p.id}')" title="Borrar">🗑</i>
+      </div>`;
+    });
+  }
+  html += `<div class="pend-new">
+      <input type="text" id="pend-new-input" placeholder="Nuevo pendiente..." onkeydown="if(event.key==='Enter'){agregarPendiente(this.value);this.value='';}"/>
+    </div>`;
+  html += `<div class="pend-hint">${pendModoColocacion?('Toca un día del mes para agendar "'+escapeHtml(pendModoColocacion.texto)+'" (toca de nuevo el punto para cancelar)'):'Toca un pendiente y luego un día para agendarlo'}</div>`;
+  html += `</div></div>`;
+  return html;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function renderMes(el){
   const today=new Date();
   const mo=(today.getMonth()+off+120)%12;
   const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+off)/12);
   setNavTitle(MESES_L[mo], yrAdj);
   
+  const isMobile=window.innerWidth<600;
   const first=new Date(yrAdj,mo,1);
   const last=new Date(yrAdj,mo+1,0);
   let startDow=(first.getDay()+6)%7;
-  let html='<div class="month-wrap"><div class="month-grid">';
-  DAYS_MIN.forEach(d=>html+=`<div class="month-day-hdr">${d}</div>`);
-  for(let i=0;i<startDow;i++) html+='<div class="month-day other-month"></div>';
+
+  let calHtml='<div class="month-main"><div class="month-grid">';
+  DAYS_MIN.forEach(d=>calHtml+=`<div class="month-day-hdr">${d}</div>`);
+  for(let i=0;i<startDow;i++) calHtml+='<div class="month-day other-month"></div>';
   for(let day=1;day<=last.getDate();day++){
     const d=new Date(yrAdj,mo,day);
     const isT=isToday(d);
@@ -682,16 +849,24 @@ function renderMes(el){
     const cats=[...new Set(entries.filter(x=>x.e).map(x=>x.e.cat))];
     const mainEntry=entries.find(x=>x.e&&x.e.cat!=='alim'&&x.e.cat!=='break');
     const shortText=mainEntry?(mainEntry.e.titulo||mainEntry.e.sub||''):'';
-    html+=`<div class="month-day${isT?' today':''}" onclick="goToDay(${yrAdj},${mo},${day})">
+    const placeable = !!pendModoColocacion;
+    const clickAttr = placeable
+      ? `onclick="colocarPendienteEnDia(${yrAdj},${mo},${day})"`
+      : `onclick="goToDay(${yrAdj},${mo},${day})"`;
+    calHtml+=`<div class="month-day${isT?' today':''}${placeable?' placeable':''}" ${clickAttr}>
       <div class="mday-num">${day}</div>
       <div class="mday-dots">${cats.map(c=>`<span class="mday-dot" style="background:${CAT_COLORS[c]||'#ccc'}"></span>`).join('')}</div>
       <div class="mday-text">${shortText}</div>
     </div>`;
   }
   const endDow=(last.getDay()+6)%7;
-  for(let i=endDow+1;i<7;i++) html+='<div class="month-day other-month"></div>';
-  html+='</div></div>';
-  el.innerHTML=html;
+  for(let i=endDow+1;i<7;i++) calHtml+='<div class="month-day other-month"></div>';
+  calHtml+='</div></div>';
+
+  const pendHtml = renderPendientesBox(isMobile);
+
+  const layoutCls = isMobile ? 'month-layout mobile' : 'month-layout';
+  el.innerHTML = `<div class="month-wrap"><div class="${layoutCls}">${calHtml}${pendHtml}</div></div>`;
 }
 
 function goToDay(yr,mo,day){
@@ -759,7 +934,7 @@ function renderHoy(el){
     if(e) allEntries.push({si,e});
   }
   const completados=allEntries.filter(x=>x.e.estado==='completado').length;
-  const pendientes=allEntries.filter(x=>x.e.estado!=='completado'&&x.e.estado!=='cancelado').length;
+  const pendientesCount=allEntries.filter(x=>x.e.estado!=='completado'&&x.e.estado!=='cancelado').length;
   const total=allEntries.length;
   const pct=total>0?Math.round((completados/total)*100):0;
 
@@ -770,7 +945,7 @@ function renderHoy(el){
   // Subheader con contadores
   html+=`<div style="background:#0d0d0d;padding:8px 16px;border-bottom:0.5px solid #1e1e1e;display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;">
     <span style="background:#162016;color:#8FD44F;border-radius:20px;padding:3px 10px;font-size:11px;">${completados} ✓</span>
-    <span style="background:#2a1a1a;color:#FF8888;border-radius:20px;padding:3px 10px;font-size:11px;">${pendientes} pendientes</span>
+    <span style="background:#2a1a1a;color:#FF8888;border-radius:20px;padding:3px 10px;font-size:11px;">${pendientesCount} pendientes</span>
     <span style="background:#1e1e1e;color:#f0ede8;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${pct}%</span>
     ${esHoy?'<span style="background:#2a1f0a;color:#E0A93E;border-radius:20px;padding:3px 10px;font-size:11px;">Hoy</span>':''}
   </div>`;
@@ -1063,9 +1238,10 @@ const CAT_BADGE_STYLES = {
 };
 function openPanel(key,lbl,di,si){
   akey=key; aSi=si;
+  if(aPendienteOrigenId===undefined) aPendienteOrigenId=null;
   const dates=getDates();
   const diReal=di!==undefined?di:(off%7+7)%7;
-  const e=getEntry(dates[diReal],si,diReal);
+  const e=getEntry(dates[diReal]||new Date(),si,diReal);
   aCat=e?e.cat:null; aSub=e?e.sub:null; aDur=e?e.dur:1;
   const titulo=e&&e.titulo?e.titulo:(e?(e.sub||''):'');
   document.getElementById('panel-lbl').textContent=lbl;
@@ -1109,6 +1285,7 @@ function closePanel(){
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('panel').classList.remove('open');
   akey=null;
+  aPendienteOrigenId=null;
 }
 function selCat(c){
   aCat=c; aSub=null; updCatBtns(); renderSubs();
@@ -1177,6 +1354,11 @@ async function saveCell(){
     await guardar(akey, entry);
   }
   await sincronizarHabitoDesdeBloque(akey, entry);
+  // Si este bloque se creó a partir de un pendiente, lo eliminamos de la lista de pendientes
+  if(aPendienteOrigenId){
+    await borrarPendiente(aPendienteOrigenId);
+    aPendienteOrigenId=null;
+  }
   closePanel(); render();
 }
 async function sincronizarHabitoDesdeBloque(key, entry){
@@ -1194,6 +1376,7 @@ async function sincronizarHabitoDesdeBloque(key, entry){
 }
 async function clrCell(){
   if(akey) await guardar(akey, '__EMPTY__');
+  aPendienteOrigenId=null;
   closePanel(); render();
 }
 
@@ -1227,7 +1410,8 @@ function exportar(){
   if(panelAbierto){panel.style.display='none';overlay.style.display='none';}
   const el=document.getElementById('content');
   const titulo=document.getElementById('nav-title').textContent;
-  const vista=document.getElementById('main-title').textContent;
+  const vistaBtn=document.querySelector('.vbtn.active');
+  const vista=vistaBtn?vistaBtn.textContent:'';
   const doCapture=()=>{
     html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#f5f4f0',logging:false}).then(canvas=>{
       const final=document.createElement('canvas');
@@ -1279,6 +1463,11 @@ document.addEventListener('keydown',e=>{
     }
   },{passive:true});
 })();
+
+// Re-render en cambio de tamaño de ventana para ajustar layout móvil/escritorio de Mes y Hoy
+window.addEventListener('resize', ()=>{
+  if(view==='mes' || view==='hoy') render();
+});
 
 cargarDatos();
 </script>
