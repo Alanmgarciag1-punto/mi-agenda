@@ -138,6 +138,8 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .block:active{cursor:grabbing;}
 .block:hover{filter:brightness(1.2);transform:scale(1.01);}
 .block.dragging{opacity:0.4;}
+.block.from-pendiente{outline:1.5px dashed #E0A93E;outline-offset:-1.5px;}
+.pend-marker{font-size:8px;margin-right:2px;opacity:.9;}
 .b-tri{background:#1e1a2e;color:#B8AEFF;border-left:3px solid #7C6FCD;}
 .b-nubo{background:#111e2a;color:#6BB8FF;border-left:3px solid #378ADD;}
 .b-trabajo{background:#111e2a;color:#6BB8FF;border-left:3px solid #378ADD;}
@@ -355,6 +357,7 @@ const HABITOS_DEF = [
 ];
 const TRI_SUBS = ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'];
 let akey=null, aCat=null, aSub=null, aDur=1, aSi=0;
+let aEsDePendienteExistente=false;
 let aPendienteOrigenId=null; // si el bloque que se está editando viene de un pendiente, guarda su id
 
 // ── SUPABASE: CARGAR ─────────────────────────────────────
@@ -616,8 +619,10 @@ function colocarPendienteEnDia(yr,mo,day){
   if(!pendModoColocacion) return false;
   const target=new Date(yr,mo,day);
   const di=(target.getDay()+6)%7;
-  // Abre el panel de edición prellenado con el texto del pendiente, en el primer slot libre del día (5:00am por defecto)
-  const siInicial=0;
+  // Abre el panel de edición prellenado con el texto del pendiente.
+  // Se usa el mediodía (12:00) como hora por defecto en vez de 5:00am, ya que
+  // un pendiente sin hora conocida rara vez corresponde al inicio del día.
+  const siInicial=14; // 12:00 (5:00 + 14*30min)
   aPendienteOrigenId=pendModoColocacion.id;
   const textoPend=pendModoColocacion.texto;
   pendModoColocacion=null;
@@ -625,6 +630,13 @@ function colocarPendienteEnDia(yr,mo,day){
   // Prellenar el título con el texto del pendiente
   document.getElementById('p-titulo').value=textoPend;
   document.getElementById('panel-titulo-display').textContent=textoPend;
+  // Resaltar el campo de hora para que sea evidente que hay que confirmarla/ajustarla
+  const horaInput=document.getElementById('p-hora-i');
+  if(horaInput){
+    horaInput.style.borderColor='#E0A93E';
+    setTimeout(()=>{ horaInput.focus(); },250);
+    setTimeout(()=>{ horaInput.style.borderColor=''; },3000);
+  }
   return true;
 }
 
@@ -699,10 +711,13 @@ function statusBadge(e){
 function blockTime(e){
   return e && e.horaI ? `<span class="block-time">${e.horaI}</span>` : '';
 }
+function pendienteMarker(e){
+  return e && e.origenPendiente ? '<span class="pend-marker" title="Este bloque vino de un pendiente">📌</span>' : '';
+}
 function blockHtml(e, key, di, si, extra){
   const lbl = e.titulo||e.sub||e.cat;
-  return `<div class="block b-${e.cat}" draggable="true" ondragstart="oDS(event,'${key}',${di},${si})" ondragend="oDE(event)" ${extra||''}>
-    <span class="block-title">${lbl}</span>
+  return `<div class="block b-${e.cat}${e.origenPendiente?' from-pendiente':''}" draggable="true" ondragstart="oDS(event,'${key}',${di},${si})" ondragend="oDE(event)" ${extra||''}>
+    <span class="block-title">${pendienteMarker(e)}${lbl}</span>
     <div class="block-footer">${blockTime(e)}${statusBadge(e)}</div>
   </div>`;
 }
@@ -1024,8 +1039,8 @@ function renderHoy(el){
         html+=`<div style="display:flex;gap:6px;margin-bottom:1px;align-items:stretch;min-height:${e.dur*slotHm}px;">
           <div style="width:62px;flex-shrink:0;font-size:8px;text-align:right;padding-top:6px;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-            <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;min-height:${e.dur*slotHm}px;">
-              <div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
+            <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="border-radius:8px;padding:7px 10px;min-height:${e.dur*slotHm}px;">
+              <div style="font-size:12px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div>
               <div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+e.dur)}</div>
               ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:9px;border-radius:20px;padding:1px 6px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
             </div>
@@ -1035,8 +1050,8 @@ function renderHoy(el){
         html+=`<div style="display:flex;gap:6px;margin-bottom:1px;align-items:center;min-height:${slotHm}px;">
           <div style="width:62px;flex-shrink:0;font-size:8px;text-align:right;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-            <div class="b-${e.cat}" style="border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
-              <div><div style="font-size:12px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)}</div></div>
+            <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div style="font-size:12px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)}</div></div>
               ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:9px;border-radius:20px;padding:1px 6px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
             </div>
           </div>
@@ -1077,16 +1092,16 @@ function renderHoy(el){
       if(e&&e.dur>1){
         for(let x=1;x<e.dur;x++) skip2[fkey(target,si+x)]=true;
         html+=`<div style="border-bottom:0.5px solid #222;height:${e.dur*slotH}px;padding:2px;cursor:pointer;${tcBg}" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-          <div class="b-${e.cat}" style="height:100%;border-radius:6px;padding:6px 10px;">
-            <div style="font-size:11px;font-weight:500;">${e.titulo||e.sub||e.cat}</div>
+          <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="height:100%;border-radius:6px;padding:6px 10px;">
+            <div style="font-size:11px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div>
             <div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+e.dur)}</div>
             ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:8px;border-radius:20px;padding:1px 5px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
           </div>
         </div>`;
       } else if(e){
         html+=`<div style="border-bottom:0.5px solid #222;height:${slotH}px;padding:2px;cursor:pointer;${tcBg}" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
-          <div class="b-${e.cat}" style="height:100%;border-radius:6px;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;">
-            <div><div style="font-size:11px;font-weight:500;">${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+1)}</div></div>
+          <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="height:100%;border-radius:6px;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:11px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+1)}</div></div>
             ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:8px;border-radius:20px;padding:1px 5px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
           </div>
         </div>`;
@@ -1288,6 +1303,7 @@ function openPanel(key,lbl,di,si){
   const diReal=di!==undefined?di:(off%7+7)%7;
   const e=getEntry(dates[diReal]||new Date(),si,diReal);
   aCat=e?e.cat:null; aSub=e?e.sub:null; aDur=e?e.dur:1;
+  aEsDePendienteExistente = !!(e && e.origenPendiente);
   const titulo=e&&e.titulo?e.titulo:(e?(e.sub||''):'');
   document.getElementById('panel-lbl').textContent=lbl;
   document.getElementById('panel-titulo-display').textContent=titulo||'Nuevo bloque';
@@ -1386,13 +1402,13 @@ async function saveCell(){
     titulo:document.getElementById('p-titulo').value.trim(),
     estado:document.getElementById('p-estado').value,
     horaI, horaF,
-    
+    origenPendiente: !!aPendienteOrigenId || !!aEsDePendienteExistente,
     desc:document.getElementById('p-desc').value.trim(),
     dur:aDur
   };
   if(newSi!==aSi && newSi>=0 && newSi<SLOTS.length){
     const parts=akey.split('_');
-    const newKey=parts.slice(0,3).join('_')+'_'+newSi;
+    const newKey=parts[0]+'_'+newSi;
     await guardar(akey, '__EMPTY__');
     await guardar(newKey, entry);
   } else {
