@@ -329,7 +329,10 @@ const TMPL = [
 
 // ── ESTADO ───────────────────────────────────────────────
 let view = localStorage.getItem('agenda_view') || 'semana';
-let off  = parseInt(localStorage.getItem('agenda_off')||'0');
+let off  = parseInt(localStorage.getItem('agenda_off')||'0'); // offset de SEMANA
+let monthOff = parseInt(localStorage.getItem('agenda_monthOff')||'0'); // offset de MES
+let yearOff = parseInt(localStorage.getItem('agenda_yearOff')||'0'); // offset de AÑO
+let habitosOff = parseInt(localStorage.getItem('agenda_habitosOff')||'0'); // offset de HÁBITOS
 let dayOff = 0; // offset en días para vista Día
 let data = {};
 let locs = ['León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.','León, Gto.'];
@@ -357,6 +360,7 @@ const HABITOS_DEF = [
 ];
 const TRI_SUBS = ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'];
 let akey=null, aCat=null, aSub=null, aDur=1, aSi=0;
+let aSiOriginal=0; // slot original al abrir el panel; no se toca mientras se edita, para saber si el bloque realmente se movió
 let aEsDePendienteExistente=false;
 let aPendienteOrigenId=null; // si el bloque que se está editando viene de un pendiente, guarda su id
 
@@ -681,12 +685,20 @@ function setView(v){
   render();
 }
 function navPrev(){
-  if(view==='hoy'){ dayOff--; render(); }
-  else { off--; localStorage.setItem('agenda_off',off); render(); }
+  if(view==='hoy'){ dayOff--; }
+  else if(view==='mes'){ monthOff--; localStorage.setItem('agenda_monthOff',monthOff); }
+  else if(view==='año'){ yearOff--; localStorage.setItem('agenda_yearOff',yearOff); }
+  else if(view==='habitos'){ habitosOff--; localStorage.setItem('agenda_habitosOff',habitosOff); }
+  else { off--; localStorage.setItem('agenda_off',off); }
+  render();
 }
 function navNext(){
-  if(view==='hoy'){ dayOff++; render(); }
-  else { off++; localStorage.setItem('agenda_off',off); render(); }
+  if(view==='hoy'){ dayOff++; }
+  else if(view==='mes'){ monthOff++; localStorage.setItem('agenda_monthOff',monthOff); }
+  else if(view==='año'){ yearOff++; localStorage.setItem('agenda_yearOff',yearOff); }
+  else if(view==='habitos'){ habitosOff++; localStorage.setItem('agenda_habitosOff',habitosOff); }
+  else { off++; localStorage.setItem('agenda_off',off); }
+  render();
 }
 
 // ── RENDER ───────────────────────────────────────────────
@@ -889,8 +901,8 @@ function escapeHtml(s){
 }
 function renderMes(el){
   const today=new Date();
-  const mo=(today.getMonth()+off+120)%12;
-  const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+off)/12);
+  const mo=(today.getMonth()+monthOff+120)%12;
+  const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+monthOff)/12);
   setNavTitle(MESES_L[mo], yrAdj);
   
   const isMobile=window.innerWidth<600;
@@ -941,7 +953,7 @@ function goToDay(yr,mo,day){
 // ── VISTA AÑO ────────────────────────────────────────────
 function renderAnio(el){
   const today=new Date();
-  const yr=today.getFullYear()+off;
+  const yr=today.getFullYear()+yearOff;
   setNavTitle(yr, '');
   
   let html='<div class="year-wrap"><div class="year-grid">';
@@ -1208,8 +1220,8 @@ function isCurrentSlot(si){
 
 function renderHabitos(el){
   const today=new Date();
-  const mo=(today.getMonth()+off+120)%12;
-  const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+off)/12);
+  const mo=(today.getMonth()+habitosOff+120)%12;
+  const yrAdj=today.getFullYear()+Math.floor((today.getMonth()+habitosOff)/12);
   setNavTitle(MESES_L[mo], yrAdj);
   const last=new Date(yrAdj,mo+1,0);
   const totalDias=last.getDate();
@@ -1297,7 +1309,7 @@ const CAT_BADGE_STYLES = {
   break:'background:#378ADD;color:#fff;'
 };
 function openPanel(key,lbl,di,si){
-  akey=key; aSi=si;
+  akey=key; aSi=si; aSiOriginal=si;
   if(aPendienteOrigenId===undefined) aPendienteOrigenId=null;
   const dates=getDates();
   const diReal=di!==undefined?di:(off%7+7)%7;
@@ -1396,7 +1408,7 @@ async function saveCell(){
   if(!akey) return;
   const horaI=document.getElementById('p-hora-i').value;
   const horaF=document.getElementById('p-hora-f').value;
-  const newSi=horaI?timeToSlot(horaI):aSi;
+  const newSi=horaI?timeToSlot(horaI):aSiOriginal;
   const entry={
     cat:aCat, sub:aSub||aCat,
     titulo:document.getElementById('p-titulo').value.trim(),
@@ -1406,7 +1418,7 @@ async function saveCell(){
     desc:document.getElementById('p-desc').value.trim(),
     dur:aDur
   };
-  if(newSi!==aSi && newSi>=0 && newSi<SLOTS.length){
+  if(newSi!==aSiOriginal && newSi>=0 && newSi<SLOTS.length){
     const parts=akey.split('_');
     const newKey=parts[0]+'_'+newSi;
     await guardar(akey, '__EMPTY__');
