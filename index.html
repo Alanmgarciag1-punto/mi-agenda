@@ -77,6 +77,7 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .month-day.other-month{background:#141414;opacity:.4;}
 .month-day.placeable{border-color:#E0A93E;border-width:1.5px;box-shadow:0 0 0 1px #E0A93E33;cursor:pointer;}
 .month-day.placeable:hover{background:#2a1f0a;border-color:#E0A93E;}
+.month-day.drop-over{background:#1e1a2e!important;border-color:#7C6FCD!important;outline:2px dashed #7C6FCD;outline-offset:-2px;}
 .month-day .mday-num{font-size:11px;font-weight:500;color:#888;margin-bottom:3px;}
 .month-day.today .mday-num{background:#7C6FCD;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;}
 .month-day .mday-dots{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:2px;}
@@ -94,7 +95,8 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .pend-chevron.open{transform:rotate(180deg);}
 .pend-list-wrap{overflow:hidden;max-height:0;transition:max-height .2s ease;}
 .pend-list-wrap.open{max-height:900px;margin-top:8px;}
-.pend-item{display:flex;align-items:center;gap:6px;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:6px;padding:6px 8px;margin-bottom:5px;transition:all .1s;}
+.pend-item{display:flex;align-items:center;gap:6px;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:6px;padding:6px 8px;margin-bottom:5px;transition:all .1s;cursor:grab;}
+.pend-item.dragging{opacity:.4;}
 .pend-item.armado{background:#1e1a2e;border-color:#7C6FCD;}
 .pend-dot{color:#639922;font-size:10px;cursor:pointer;flex-shrink:0;}
 .pend-txt{font-size:11px;color:#ccc;flex:1;cursor:pointer;word-break:break-word;}
@@ -552,13 +554,46 @@ async function borrarPendiente(id){
     showSync('⚠ Eliminado local','err');
   }
 }
-function activarColocacion(id, texto){
+function activarColocacion(id){
+  const p=pendientes.find(x=>x.id===id);
+  if(!p) return;
   if(pendModoColocacion && pendModoColocacion.id===id){
     pendModoColocacion=null; // toca de nuevo para cancelar
   } else {
-    pendModoColocacion={id, texto};
+    pendModoColocacion={id, texto:p.texto};
   }
   render();
+}
+// ── DRAG & DROP DE PENDIENTES (escritorio) ────────────────
+let pendDragSrc=null;
+function pendDragStart(e,id){
+  const p=pendientes.find(x=>x.id===id);
+  if(!p) return;
+  pendDragSrc={id, texto:p.texto};
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain', id);
+  setTimeout(()=>e.target.classList.add('dragging'),0);
+}
+function pendDragEnd(e){
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.month-day.drop-over').forEach(el=>el.classList.remove('drop-over'));
+}
+function monthDayDragOver(e){
+  if(!pendDragSrc) return;
+  e.preventDefault();
+  e.currentTarget.classList.add('drop-over');
+  e.dataTransfer.dropEffect='move';
+}
+function monthDayDragLeave(e){
+  e.currentTarget.classList.remove('drop-over');
+}
+function monthDayDrop(e,yr,mo,day){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drop-over');
+  if(!pendDragSrc) return;
+  pendModoColocacion={id:pendDragSrc.id, texto:pendDragSrc.texto};
+  pendDragSrc=null;
+  colocarPendienteEnDia(yr,mo,day);
 }
 function cancelarColocacion(){
   pendModoColocacion=null;
@@ -810,9 +845,9 @@ function renderPendientesBox(isMobile){
   } else {
     pendientes.forEach(p=>{
       const armado = pendModoColocacion && pendModoColocacion.id===p.id;
-      html += `<div class="pend-item${armado?' armado':''}">
-        <span class="pend-dot" onclick="activarColocacion('${p.id}', ${JSON.stringify(p.texto)})">●</span>
-        <span class="pend-txt" onclick="activarColocacion('${p.id}', ${JSON.stringify(p.texto)})">${escapeHtml(p.texto)}</span>
+      html += `<div class="pend-item${armado?' armado':''}" draggable="true" ondragstart="pendDragStart(event,'${p.id}')" ondragend="pendDragEnd(event)">
+        <span class="pend-dot" onclick="activarColocacion('${p.id}')">●</span>
+        <span class="pend-txt" onclick="activarColocacion('${p.id}')">${escapeHtml(p.texto)}</span>
         <i class="pend-icon" onclick="event.stopPropagation();editarPendiente('${p.id}')" title="Editar">✎</i>
         <i class="pend-icon" onclick="event.stopPropagation();borrarPendiente('${p.id}')" title="Borrar">🗑</i>
       </div>`;
@@ -853,7 +888,8 @@ function renderMes(el){
     const clickAttr = placeable
       ? `onclick="colocarPendienteEnDia(${yrAdj},${mo},${day})"`
       : `onclick="goToDay(${yrAdj},${mo},${day})"`;
-    calHtml+=`<div class="month-day${isT?' today':''}${placeable?' placeable':''}" ${clickAttr}>
+    const dragAttrs = `ondragover="monthDayDragOver(event)" ondragleave="monthDayDragLeave(event)" ondrop="monthDayDrop(event,${yrAdj},${mo},${day})"`;
+    calHtml+=`<div class="month-day${isT?' today':''}${placeable?' placeable':''}" ${clickAttr} ${dragAttrs}>
       <div class="mday-num">${day}</div>
       <div class="mday-dots">${cats.map(c=>`<span class="mday-dot" style="background:${CAT_COLORS[c]||'#ccc'}"></span>`).join('')}</div>
       <div class="mday-text">${shortText}</div>
