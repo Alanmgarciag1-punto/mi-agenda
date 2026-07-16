@@ -104,8 +104,9 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .pend-icon{font-size:13px;color:#555;cursor:pointer;flex-shrink:0;padding:2px;}
 .pend-icon:hover{color:#f0ede8;}
 .pend-new{display:flex;align-items:center;gap:6px;border:0.5px dashed #333;border-radius:6px;padding:7px 8px;margin-top:2px;}
-.pend-new input{background:transparent;border:none;outline:none;color:#f0ede8;font-size:11px;flex:1;font-family:'Inter',system-ui,sans-serif;}
+.pend-new input{background:transparent;border:none;outline:none;color:#f0ede8;font-size:11px;flex:1;font-family:'Inter',system-ui,sans-serif;min-width:0;}
 .pend-new input::placeholder{color:#555;}
+.pend-new .pend-icon{color:#7C6FCD;flex-shrink:0;}
 .pend-hint{font-size:9px;color:#7C6FCD;margin-top:8px;line-height:1.4;min-height:12px;}
 .pend-empty{font-size:10px;color:#444;padding:6px 2px;}
 
@@ -521,6 +522,13 @@ async function agregarPendiente(texto){
     showSync('⚠ Guardado local','err');
   }
 }
+function agregarPendienteDesdeInput(){
+  const input=document.getElementById('pend-new-input');
+  if(!input) return;
+  const val=input.value;
+  input.value='';
+  agregarPendiente(val);
+}
 async function editarPendiente(id){
   const p=pendientes.find(x=>x.id===id);
   if(!p) return;
@@ -854,7 +862,8 @@ function renderPendientesBox(isMobile){
     });
   }
   html += `<div class="pend-new">
-      <input type="text" id="pend-new-input" placeholder="Nuevo pendiente..." onkeydown="if(event.key==='Enter'){agregarPendiente(this.value);this.value='';}"/>
+      <input type="text" id="pend-new-input" placeholder="Nuevo pendiente..." enterkeyhint="done" onkeydown="if(event.key==='Enter'){agregarPendienteDesdeInput();}"/>
+      <i class="pend-icon" onclick="agregarPendienteDesdeInput()" title="Agregar" style="cursor:pointer;font-style:normal;font-weight:600;font-size:15px;">+</i>
     </div>`;
   html += `<div class="pend-hint">${pendModoColocacion?('Toca un día del mes para agendar "'+escapeHtml(pendModoColocacion.texto)+'" (toca de nuevo el punto para cancelar)'):'Toca un pendiente y luego un día para agendarlo'}</div>`;
   html += `</div></div>`;
