@@ -1421,7 +1421,12 @@ async function saveCell(){
   if(newSi!==aSiOriginal && newSi>=0 && newSi<SLOTS.length){
     const parts=akey.split('_');
     const newKey=parts[0]+'_'+newSi;
-    const destinoExistente = (data[newKey] && data[newKey]!=='__EMPTY__') ? data[newKey] : null;
+    // Reconstruir la fecha real a partir de la llave (el día no cambia al mover, solo el slot)
+    const [dy,dm,dd]=parts[0].split('-').map(Number);
+    const targetDate=new Date(dy,dm,dd);
+    const targetDow=(targetDate.getDay()+6)%7;
+    // Usamos getEntry (no el dato crudo) para detectar también actividades de la plantilla predeterminada, no solo las guardadas explícitamente
+    const destinoExistente = getEntry(targetDate, newSi, targetDow);
     if(destinoExistente){
       const seguro=confirm('Ya hay una actividad en ese horario ("'+(destinoExistente.titulo||destinoExistente.sub||destinoExistente.cat)+'"). ¿Quieres reemplazarla?');
       if(!seguro) return;
