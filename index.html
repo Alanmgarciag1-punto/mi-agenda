@@ -1421,6 +1421,11 @@ async function saveCell(){
   if(newSi!==aSiOriginal && newSi>=0 && newSi<SLOTS.length){
     const parts=akey.split('_');
     const newKey=parts[0]+'_'+newSi;
+    const destinoExistente = (data[newKey] && data[newKey]!=='__EMPTY__') ? data[newKey] : null;
+    if(destinoExistente){
+      const seguro=confirm('Ya hay una actividad en ese horario ("'+(destinoExistente.titulo||destinoExistente.sub||destinoExistente.cat)+'"). ¿Quieres reemplazarla?');
+      if(!seguro) return;
+    }
     await guardar(akey, '__EMPTY__');
     await guardar(newKey, entry);
   } else {
@@ -1466,10 +1471,23 @@ async function oDrp(e,destKey,destDi,destSi){
   const diReal=dragSrc.di!==undefined?dragSrc.di:(off%7+7)%7;
   const src=getEntry(dates[diReal],dragSrc.si,diReal);
   if(!src) return;
+
+  // Si el destino ya tiene otra actividad, pedir confirmación antes de reemplazarla
+  const destino=getEntry(dates[destDi],destSi,destDi);
+  if(destino){
+    const seguro=confirm('Ya hay una actividad en ese horario ("'+(destino.titulo||destino.sub||destino.cat)+'"). ¿Quieres reemplazarla?');
+    if(!seguro){ dragSrc=null; return; }
+  }
+
   const dk=dragSrc.key;
   dragSrc=null;
+  const nuevaEntry={
+    ...src,
+    horaI: slotToTime(destSi),
+    horaF: slotToTime(destSi+(src.dur||1))
+  };
   await guardar(dk, '__EMPTY__');
-  await guardar(destKey, {...src});
+  await guardar(destKey, nuevaEntry);
   render();
 }
 
