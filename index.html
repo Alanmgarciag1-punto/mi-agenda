@@ -631,6 +631,20 @@ function colocarPendienteEnDia(yr,mo,day){
   const textoPend=pendModoColocacion.texto;
   pendModoColocacion=null;
   openPanel(fkey(target,siInicial), DAYS[di]+' · '+slotToTime(siInicial), di, siInicial);
+
+  // IMPORTANTE: un pendiente es una actividad NUEVA y distinta de cualquier cosa que ya
+  // exista en ese horario por defecto. openPanel prellena los campos según lo que encuentre
+  // en ese slot (para el caso normal de "editar un bloque existente"), así que aquí forzamos
+  // que todo quede en blanco, sin heredar categoría/subcategoría/duración/estado/descripción
+  // de una actividad distinta que solo coincide en horario.
+  aCat=null; aSub=null; aDur=1;
+  document.getElementById('p-estado').value='';
+  document.getElementById('p-desc').value='';
+  document.getElementById('p-dur').value=1;
+  document.getElementById('panel-cat-badge').style.display='none';
+  updCatBtns(); renderSubs(); renderEstadoBtns('');
+  updDur();
+
   // Prellenar el título con el texto del pendiente
   document.getElementById('p-titulo').value=textoPend;
   document.getElementById('panel-titulo-display').textContent=textoPend;
@@ -675,6 +689,19 @@ function getDayEntries(d){
     if(e) entries.push({si,e});
   }
   return entries;
+}
+// Revisa si el slot 'si' está ocupado, ya sea porque una actividad EMPIEZA justo ahí,
+// o porque una actividad más larga que empezó antes lo cubre por su duración
+// (ej. una actividad de 11:00 a 13:00 cubre también el slot de las 12:00).
+function bloqueQueCubre(d, dow, si){
+  const maxDur=12; // la duración máxima permitida en el panel es 12 slots (6 horas)
+  for(let start=Math.max(0, si-(maxDur-1)); start<=si; start++){
+    const e=getEntry(d, start, dow);
+    if(e && (e.dur||1) > (si-start)){
+      return {entry:e, si:start};
+    }
+  }
+  return null;
 }
 
 // ── NAVEGACIÓN / VISTAS ──────────────────────────────────
@@ -1429,23 +1456,44 @@ async function saveCell(){
   // Validamos conflicto siempre que: (a) el bloque se mueva a otra hora, o (b) sea un bloque nuevo
   // creado desde un pendiente (aunque se quede en la hora por defecto, esa hora puede ya estar ocupada).
   // Al editar un bloque YA existente sin moverlo de hora, no aplica (seria "reemplazarse a si mismo").
+  let cubierto=null;
   if(moviendo || esNuevoDesdePendiente){
     const siAConsultar = moviendo ? newSi : aSiOriginal;
-    const destinoExistente = getEntry(targetDate, siAConsultar, targetDow);
-    if(destinoExistente){
-      const seguro=confirm('Ya hay una actividad en ese horario ("'+(destinoExistente.titulo||destinoExistente.sub||destinoExistente.cat)+'"). ¿Quieres reemplazarla?');
+    cubierto = bloqueQueCubre(targetDate, targetDow, siAConsultar);
+    if(cubierto){
+      const seguro=confirm('Ya hay una actividad en ese horario ("'+(cubierto.entry.titulo||cubierto.entry.sub||cubierto.entry.cat)+'"). ¿Quieres reemplazarla?');
       if(!seguro) return;
     }
   }
 
-  if(moviendo){
+  // Si al confirmar reemplazar, la actividad existente empezaba en un slot ANTERIOR
+  // (por tener una duración que se extiende hasta cubrir el horario elegido),
+  // hay que limpiar también esa llave original para que no quede un bloque "fantasma".
+  async function limpiarCubiertoSiAplica(slotFinal){
+    if(cubierto && cubierto.si!==slotFinal){
+      await guardar(parts[0]+'_'+cubierto.si, '__EMPTY__');
+    }
+  }
+
+  if(esNuevoDesdePendiente){
+    // Es un bloque NUEVO: NUNCA se debe borrar el slot por defecto (akey) donde se abrió el
+    // panel, porque ahí puede haber una actividad completamente distinta que no debe tocarse
+    // a menos que el usuario haya confirmado explícitamente reemplazarla (arriba).
+    const finalKey=parts[0]+'_'+newSi;
+    await limpiarCubiertoSiAplica(newSi);
+    await guardar(finalKey, entry);
+    await sincronizarHabitoDesdeBloque(finalKey, entry);
+  } else if(moviendo){
     const newKey=parts[0]+'_'+newSi;
+    await limpiarCubiertoSiAplica(newSi);
     await guardar(akey, '__EMPTY__');
     await guardar(newKey, entry);
+    await sincronizarHabitoDesdeBloque(newKey, entry);
   } else {
+    await limpiarCubiertoSiAplica(aSiOriginal);
     await guardar(akey, entry);
+    await sincronizarHabitoDesdeBloque(akey, entry);
   }
-  await sincronizarHabitoDesdeBloque(akey, entry);
   // Si este bloque se creó a partir de un pendiente, lo eliminamos de la lista de pendientes
   if(aPendienteOrigenId){
     await borrarPendiente(aPendienteOrigenId);
