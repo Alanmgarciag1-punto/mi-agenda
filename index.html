@@ -1418,19 +1418,28 @@ async function saveCell(){
     desc:document.getElementById('p-desc').value.trim(),
     dur:aDur
   };
-  if(newSi!==aSiOriginal && newSi>=0 && newSi<SLOTS.length){
-    const parts=akey.split('_');
-    const newKey=parts[0]+'_'+newSi;
-    // Reconstruir la fecha real a partir de la llave (el día no cambia al mover, solo el slot)
-    const [dy,dm,dd]=parts[0].split('-').map(Number);
-    const targetDate=new Date(dy,dm,dd);
-    const targetDow=(targetDate.getDay()+6)%7;
-    // Usamos getEntry (no el dato crudo) para detectar también actividades de la plantilla predeterminada, no solo las guardadas explícitamente
-    const destinoExistente = getEntry(targetDate, newSi, targetDow);
+
+  const parts=akey.split('_');
+  const [dy,dm,dd]=parts[0].split('-').map(Number);
+  const targetDate=new Date(dy,dm,dd);
+  const targetDow=(targetDate.getDay()+6)%7;
+  const moviendo = newSi!==aSiOriginal && newSi>=0 && newSi<SLOTS.length;
+  const esNuevoDesdePendiente = !!aPendienteOrigenId;
+
+  // Validamos conflicto siempre que: (a) el bloque se mueva a otra hora, o (b) sea un bloque nuevo
+  // creado desde un pendiente (aunque se quede en la hora por defecto, esa hora puede ya estar ocupada).
+  // Al editar un bloque YA existente sin moverlo de hora, no aplica (seria "reemplazarse a si mismo").
+  if(moviendo || esNuevoDesdePendiente){
+    const siAConsultar = moviendo ? newSi : aSiOriginal;
+    const destinoExistente = getEntry(targetDate, siAConsultar, targetDow);
     if(destinoExistente){
       const seguro=confirm('Ya hay una actividad en ese horario ("'+(destinoExistente.titulo||destinoExistente.sub||destinoExistente.cat)+'"). ¿Quieres reemplazarla?');
       if(!seguro) return;
     }
+  }
+
+  if(moviendo){
+    const newKey=parts[0]+'_'+newSi;
     await guardar(akey, '__EMPTY__');
     await guardar(newKey, entry);
   } else {
