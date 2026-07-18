@@ -18,6 +18,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:#111;color:#f0ede8;disp
 #sync-status.err{background:#2a1a1a;color:#FF8FB3;}
 #sync-status.loading{background:#1e1e1e;color:#888;}
 
+/* TOAST DE DESHACER */
+#undo-toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%) translateY(20px);z-index:210;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:10px;padding:8px 10px 8px 14px;display:flex;align-items:center;gap:12px;font-size:12px;color:#f0ede8;box-shadow:0 4px 20px #00000066;opacity:0;visibility:hidden;transition:opacity .2s ease,transform .2s ease;}
+#undo-toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+#undo-toast button{background:#f0ede8;color:#111;border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',system-ui,sans-serif;}
+#undo-toast button:hover{filter:brightness(0.92);}
+
 /* HEADER */
 .top-bar{background:#0d0d0d;color:#f0ede8;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;border-bottom:0.5px solid #1e1e1e;}
 @media(max-width:600px){.top-bar{padding-top:55px;}}
@@ -194,6 +200,10 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
 <body>
 
 <div id="sync-status"></div>
+<div id="undo-toast">
+  <span id="undo-toast-msg"></span>
+  <button onclick="ejecutarDeshacer()">Deshacer</button>
+</div>
 
 <div class="top-bar">
   <div class="nav-area">
@@ -295,6 +305,32 @@ function showSync(msg, type){
   const el=document.getElementById('sync-status');
   el.textContent=msg; el.className='show '+type;
   if(type!=='loading') setTimeout(()=>el.className='',2500);
+}
+
+// ── DESHACER (última acción) ──────────────────────────────
+// Sistema genérico: cualquier acción destructiva (borrar, reemplazar, mover) puede
+// registrar una función de reversión. Se muestra un botón "Deshacer" por 10 segundos.
+let ultimaAccionDeshacer=null;
+let deshacerTimeoutId=null;
+function registrarDeshacer(descripcion, restaurar){
+  ultimaAccionDeshacer={descripcion, restaurar};
+  const el=document.getElementById('undo-toast');
+  document.getElementById('undo-toast-msg').textContent=descripcion;
+  el.classList.add('show');
+  if(deshacerTimeoutId) clearTimeout(deshacerTimeoutId);
+  deshacerTimeoutId=setTimeout(()=>{
+    el.classList.remove('show');
+    ultimaAccionDeshacer=null;
+  }, 10000);
+}
+async function ejecutarDeshacer(){
+  if(!ultimaAccionDeshacer) return;
+  const accion=ultimaAccionDeshacer;
+  ultimaAccionDeshacer=null;
+  if(deshacerTimeoutId) clearTimeout(deshacerTimeoutId);
+  document.getElementById('undo-toast').classList.remove('show');
+  await accion.restaurar();
+  showSync('↺ Deshecho','ok');
 }
 
 // ── CONSTANTES ───────────────────────────────────────────
@@ -508,6 +544,11 @@ async function toggleHabito(fechaKey, habitoId){
 }
 
 // ── PENDIENTES: CRUD ──────────────────────────────────────
+function pendModoColocacionTextoRespaldo(id){
+  if(!id) return null;
+  const p=pendientes.find(x=>x.id===id);
+  return p ? p.texto : null;
+}
 async function agregarPendiente(texto){
   texto=(texto||'').trim();
   if(!texto) return;
@@ -555,7 +596,10 @@ async function editarPendiente(id){
     showSync('⚠ Guardado local','err');
   }
 }
-async function borrarPendiente(id){
+async function borrarPendiente(id, opts){
+  opts = opts || {};
+  const p = pendientes.find(x=>x.id===id);
+  const textoRespaldo = p ? p.texto : null;
   pendientes = pendientes.filter(p=>p.id!==id);
   if(pendModoColocacion && pendModoColocacion.id===id) pendModoColocacion=null;
   render();
@@ -567,6 +611,13 @@ async function borrarPendiente(id){
     console.error('Error borrando pendiente:', e);
     localStorage.setItem('agenda_pendientes', JSON.stringify(pendientes));
     showSync('⚠ Eliminado local','err');
+  }
+  // No registramos "deshacer" aquí si esto se llamó desde saveCell (ya registra su propio
+  // deshacer más completo, "Pendiente agendado"), para no mostrar dos avisos encimados.
+  if(!opts.silencioso && textoRespaldo){
+    registrarDeshacer('Pendiente eliminado', async ()=>{
+      await agregarPendiente(textoRespaldo);
+    });
   }
 }
 function activarColocacion(id){
@@ -674,11 +725,9 @@ function getEntry(d,si,di){
     if(data[k]==='__EMPTY__') return null;
     return data[k];
   }
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-  const monHoy=new Date(hoy); const dowH=(monHoy.getDay()+6)%7; monHoy.setDate(monHoy.getDate()-dowH);
-  const monD=new Date(d); monD.setHours(0,0,0,0); const dowD=(monD.getDay()+6)%7; monD.setDate(monD.getDate()-dowD);
-  if(monD.getTime()!==monHoy.getTime()) return null;
-  if(di!==undefined) return TMPL[di][si]||null;
+  // NOTA: antes, aquí se precargaba automáticamente una plantilla (TMPL) de actividades
+  // por defecto para los días de la semana actual. Se desactivó a propósito: ahora cada
+  // semana empieza completamente en blanco y las actividades solo aparecen si tú las agregas.
   return null;
 }
 function getDayEntries(d){
@@ -1480,23 +1529,53 @@ async function saveCell(){
     // panel, porque ahí puede haber una actividad completamente distinta que no debe tocarse
     // a menos que el usuario haya confirmado explícitamente reemplazarla (arriba).
     const finalKey=parts[0]+'_'+newSi;
+    const prevFinal = (data[finalKey]!==undefined) ? data[finalKey] : '__EMPTY__';
+    const cubiertoKey = (cubierto && cubierto.si!==newSi) ? (parts[0]+'_'+cubierto.si) : null;
+    const prevCubierto = cubiertoKey ? cubierto.entry : null;
+    const textoPendienteOriginal = pendModoColocacionTextoRespaldo(aPendienteOrigenId);
+
     await limpiarCubiertoSiAplica(newSi);
     await guardar(finalKey, entry);
     await sincronizarHabitoDesdeBloque(finalKey, entry);
+
+    registrarDeshacer('Pendiente agendado', async ()=>{
+      await guardar(finalKey, prevFinal);
+      if(cubiertoKey) await guardar(cubiertoKey, prevCubierto);
+      if(textoPendienteOriginal) await agregarPendiente(textoPendienteOriginal);
+      render();
+    });
   } else if(moviendo){
     const newKey=parts[0]+'_'+newSi;
+    const prevAkey = (data[akey]!==undefined) ? data[akey] : '__EMPTY__';
+    const prevNewKey = (data[newKey]!==undefined) ? data[newKey] : '__EMPTY__';
+    const cubiertoKey = (cubierto && cubierto.si!==newSi) ? (parts[0]+'_'+cubierto.si) : null;
+    const prevCubierto = cubiertoKey ? cubierto.entry : null;
+
     await limpiarCubiertoSiAplica(newSi);
     await guardar(akey, '__EMPTY__');
     await guardar(newKey, entry);
     await sincronizarHabitoDesdeBloque(newKey, entry);
+
+    registrarDeshacer('Actividad movida', async ()=>{
+      await guardar(akey, prevAkey);
+      await guardar(newKey, prevNewKey);
+      if(cubiertoKey) await guardar(cubiertoKey, prevCubierto);
+      render();
+    });
   } else {
+    const prevAkey = (data[akey]!==undefined) ? data[akey] : '__EMPTY__';
     await limpiarCubiertoSiAplica(aSiOriginal);
     await guardar(akey, entry);
     await sincronizarHabitoDesdeBloque(akey, entry);
+
+    registrarDeshacer('Actividad editada', async ()=>{
+      await guardar(akey, prevAkey);
+      render();
+    });
   }
   // Si este bloque se creó a partir de un pendiente, lo eliminamos de la lista de pendientes
   if(aPendienteOrigenId){
-    await borrarPendiente(aPendienteOrigenId);
+    await borrarPendiente(aPendienteOrigenId, {silencioso:true});
     aPendienteOrigenId=null;
   }
   closePanel(); render();
@@ -1515,7 +1594,17 @@ async function sincronizarHabitoDesdeBloque(key, entry){
   if(habitoDef) await guardarHabito(fechaKey, habitoDef.id, completado);
 }
 async function clrCell(){
-  if(akey) await guardar(akey, '__EMPTY__');
+  if(akey){
+    const keySnapshot=akey;
+    const prev = (data[keySnapshot]!==undefined) ? data[keySnapshot] : '__EMPTY__';
+    await guardar(keySnapshot, '__EMPTY__');
+    if(prev!=='__EMPTY__'){
+      registrarDeshacer('Actividad borrada', async ()=>{
+        await guardar(keySnapshot, prev);
+        render();
+      });
+    }
+  }
   aPendienteOrigenId=null;
   closePanel(); render();
 }
@@ -1542,6 +1631,8 @@ async function oDrp(e,destKey,destDi,destSi){
   }
 
   const dk=dragSrc.key;
+  const prevSrc = (data[dk]!==undefined) ? data[dk] : '__EMPTY__';
+  const prevDest = (data[destKey]!==undefined) ? data[destKey] : '__EMPTY__';
   dragSrc=null;
   const nuevaEntry={
     ...src,
@@ -1550,6 +1641,11 @@ async function oDrp(e,destKey,destDi,destSi){
   };
   await guardar(dk, '__EMPTY__');
   await guardar(destKey, nuevaEntry);
+  registrarDeshacer('Actividad movida', async ()=>{
+    await guardar(dk, prevSrc);
+    await guardar(destKey, prevDest);
+    render();
+  });
   render();
 }
 
