@@ -229,6 +229,7 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
       <div class="leg-item"><span class="leg-dot" style="background:#D4537E"></span>Personal</div>
     </div>
     <button onclick="exportar()" class="png-btn" title="Exportar como imagen">⬇ PNG</button>
+    <button onclick="descargarRespaldo()" class="png-btn" title="Descargar un respaldo completo de tus datos">⬇ Respaldo</button>
   </div>
 </div>
 
@@ -1647,6 +1648,30 @@ async function oDrp(e,destKey,destDi,destSi){
     render();
   });
   render();
+}
+
+// ── DESCARGAR RESPALDO (JSON) ─────────────────────────────
+// Descarga un archivo con todos tus datos (agenda, hábitos, ubicaciones y pendientes)
+// como respaldo. Es un archivo de solo lectura para guardar aparte; no se "restaura"
+// automáticamente desde la app, pero sirve como copia de seguridad ante cualquier problema.
+function descargarRespaldo(){
+  const respaldo={
+    version:1,
+    generado: new Date().toISOString(),
+    agenda: data,
+    habitos: habitosData,
+    ubicaciones: locs,
+    pendientes: pendientes
+  };
+  const blob=new Blob([JSON.stringify(respaldo, null, 2)], {type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  const fecha=new Date().toISOString().slice(0,10);
+  link.download=`respaldo_agenda_${fecha}.json`;
+  link.href=url;
+  link.click();
+  URL.revokeObjectURL(url);
+  showSync('✓ Respaldo descargado','ok');
 }
 
 // ── EXPORTAR PNG ─────────────────────────────────────────
