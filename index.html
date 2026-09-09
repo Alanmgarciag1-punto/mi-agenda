@@ -152,6 +152,7 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .b-alim{background:#162016;color:#8FD44F;border-left:3px solid #639922;}
 .b-personal{background:#1e1228;color:#FF8FB3;border-left:3px solid #D4537E;}
 .b-break{background:#111e2a;color:#6BB8FF;border-left:3px solid #378ADD;}
+.b-shitoushui{background:#2a1509;color:#E8935F;border-left:3px solid #C15F2C;}
 
 /* PANEL */
 .estado-btn{padding:5px 12px;border-radius:20px;border:0.5px solid #333;cursor:pointer;font-size:11px;background:#1a1a1a;color:#666;transition:all .15s;font-family:'Inter',system-ui,sans-serif;}
@@ -172,20 +173,25 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .plbl{font-size:11px;color:#666;min-width:90px;padding-top:3px;text-transform:uppercase;letter-spacing:.04em;}
 .pval{flex:1;}
 .ptitle{font-size:14px;font-weight:500;border:0.5px solid #7C6FCD;border-radius:8px;padding:7px 10px;width:100%;font-family:'Inter',system-ui,sans-serif;outline:none;background:#141414;color:#f0ede8;}
-.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-.cbtn{padding:6px 4px;border-radius:8px;border:0.5px solid #333;cursor:pointer;font-size:11px;font-weight:500;background:#141414;color:#666;text-align:center;transition:all .1s;font-family:'Inter',system-ui,sans-serif;}
-.cbtn.sel-tri{background:#2a2047;border-color:#7C6FCD;color:#B8AEFF;}
-.cbtn.sel-nubo{background:#111e2a;border-color:#378ADD;color:#6BB8FF;}
-.cbtn.sel-trabajo{background:#111e2a;border-color:#378ADD;color:#6BB8FF;}
-.cbtn.sel-alim{background:#162016;border-color:#639922;color:#8FD44F;}
-.cbtn.sel-personal{background:#1e1228;border-color:#D4537E;color:#FF8FB3;}
-.cbtn.sel-break{background:#111e2a;border-color:#378ADD;color:#6BB8FF;}
+.cat-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+.cat-row::-webkit-scrollbar{height:4px;}
+.cat-row::-webkit-scrollbar-thumb{background:#333;border-radius:4px;}
+.cbtn{flex-shrink:0;padding:7px 13px;border-radius:20px;border:0.5px solid #333;cursor:pointer;font-size:11.5px;font-weight:500;background:#141414;color:#888;white-space:nowrap;transition:all .1s;font-family:'Inter',system-ui,sans-serif;}
+.cbtn.sel-tri{background:#2a2047;border-color:#7C6FCD;color:#B8AEFF;font-weight:600;}
+.cbtn.sel-nubo{background:#111e2a;border-color:#378ADD;color:#6BB8FF;font-weight:600;}
+.cbtn.sel-trabajo{background:#111e2a;border-color:#378ADD;color:#6BB8FF;font-weight:600;}
+.cbtn.sel-alim{background:#162016;border-color:#639922;color:#8FD44F;font-weight:600;}
+.cbtn.sel-personal{background:#1e1228;border-color:#D4537E;color:#FF8FB3;font-weight:600;}
+.cbtn.sel-break{background:#111e2a;border-color:#378ADD;color:#6BB8FF;font-weight:600;}
+.cbtn.sel-shitoushui{background:#2a1509;border-color:#C15F2C;color:#E8935F;font-weight:600;}
 .sub-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
 .spill{padding:4px 10px;border-radius:20px;border:0.5px solid #333;cursor:pointer;font-size:11px;background:#141414;color:#666;font-family:'Inter',system-ui,sans-serif;}
 .spill.sel{background:#f0ede8;color:#111;border-color:#f0ede8;}
 select.pval-select,input.pval-input{width:100%;padding:6px 8px;border:0.5px solid #2a2a2a;border-radius:8px;font-size:12px;font-family:'Inter',system-ui,sans-serif;outline:none;background:#141414;color:#f0ede8;}
 select.pval-select:focus,input.pval-input:focus{border-color:#7C6FCD;}
 .dur-row{display:flex;align-items:center;gap:10px;}
+.horario-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;width:100%;}
+.horario-arrow{color:#555;font-size:12px;flex-shrink:0;}
 .dur-row input[type=range]{flex:1;accent-color:#7C6FCD;}
 .dur-val{font-size:12px;font-weight:500;min-width:50px;color:#888;}
 textarea.pval-desc{width:100%;min-height:80px;padding:8px;border:0.5px solid #2a2a2a;border-radius:8px;font-size:12px;font-family:'Inter',system-ui,sans-serif;resize:vertical;outline:none;background:#141414;color:#f0ede8;}
@@ -225,6 +231,7 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
     <div class="leg-inline">
       <div class="leg-item"><span class="leg-dot" style="background:#7C6FCD"></span>Triatlón</div>
       <div class="leg-item"><span class="leg-dot" style="background:#378ADD"></span>NUBO</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#C15F2C"></span>SHITOUSHUI</div>
       <div class="leg-item"><span class="leg-dot" style="background:#639922"></span>Alim.</div>
       <div class="leg-item"><span class="leg-dot" style="background:#D4537E"></span>Personal</div>
     </div>
@@ -251,12 +258,13 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
     <div class="prow" style="flex-direction:column;gap:6px;padding-bottom:14px;">
       <input class="ptitle" id="p-titulo" placeholder="Agrega un título..." type="text" oninput="document.getElementById('panel-titulo-display').textContent=this.value||'Detalles'"/>
     </div>
-    <div class="prow">
+    <div class="prow" style="flex-direction:column;gap:8px;">
       <span class="plbl">Categoría</span>
-      <div class="pval">
-        <div class="cat-grid">
+      <div class="pval" style="width:100%;">
+        <div class="cat-row">
           <button class="cbtn" data-c="tri" onclick="selCat('tri')">🏅 Triatlón</button>
           <button class="cbtn" data-c="nubo" onclick="selCat('nubo')">🏠 NUBO</button>
+          <button class="cbtn" data-c="shitoushui" onclick="selCat('shitoushui')">🏗️ SHITOUSHUI</button>
           <button class="cbtn" data-c="alim" onclick="selCat('alim')">🍽️ Aliment.</button>
           <button class="cbtn" data-c="personal" onclick="selCat('personal')">🌿 Personal</button>
         </div>
@@ -268,22 +276,17 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
       <div id="p-estado-btns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       <input type="hidden" id="p-estado" value=""/>
     </div>
-    <div class="prow">
-      <span class="plbl">Duración</span>
-      <div class="pval">
-        <div class="dur-row">
-          <input type="range" id="p-dur" min="1" max="12" step="1" value="1" oninput="updDur()"/>
-          <span class="dur-val" id="p-dur-lbl">30 min</span>
-        </div>
+    <div class="prow" style="flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <span class="plbl" style="min-width:0;">Horario</span>
+        <span class="dur-val" id="p-dur-lbl">30 min</span>
       </div>
-    </div>
-    <div class="prow">
-      <span class="plbl">Hora inicio</span>
-      <input type="time" class="pval-input" id="p-hora-i" step="1800" onchange="syncDurFromHoras()"/>
-    </div>
-    <div class="prow">
-      <span class="plbl">Hora fin</span>
-      <input type="time" class="pval-input" id="p-hora-f" step="1800" onchange="syncDurFromHoras()"/>
+      <input type="range" id="p-dur" min="1" max="12" step="1" value="1" oninput="updDur()" style="width:100%;accent-color:#7C6FCD;"/>
+      <div class="horario-row">
+        <input type="time" class="pval-input" id="p-hora-i" step="1800" onchange="syncDurFromHoras()"/>
+        <span class="horario-arrow">→</span>
+        <input type="time" class="pval-input" id="p-hora-f" step="1800" onchange="syncDurFromHoras()"/>
+      </div>
     </div>
     <div class="prow" style="flex-direction:column;gap:6px;">
       <span class="plbl">Descripción</span>
@@ -340,15 +343,16 @@ const DAYS_S = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 const DAYS_MIN = ['L','M','X','J','V','S','D'];
 const MESES  = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MESES_L= ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const CAT_COLORS = {tri:'#7C6FCD',nubo:'#378ADD',trabajo:'#378ADD',alim:'#639922',personal:'#D4537E',break:'#378ADD'};
+const CAT_COLORS = {tri:'#7C6FCD',nubo:'#378ADD',trabajo:'#378ADD',alim:'#639922',personal:'#D4537E',break:'#378ADD',shitoushui:'#C15F2C'};
 
 const SUBS = {
-  tri:     ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'],
-  nubo:    ['Captación','Seguimiento','Propuestas','Redes','Visitas','Admin','Junta','Firma'],
-  trabajo: ['Consultoría','Análisis','Reunión','Family Office','Reportes'],
-  alim:    ['Desayuno','Comida','Cena','Pre-entreno','Snack mañana','Snack tarde'],
-  personal:['Lectura','Trámites','Evento familiar','Mafer','Inicia el día','Cocinar'],
-  break:   ['Break','Siesta','Descanso activo']
+  tri:        ['Carrera','Ciclismo','Natación','Fuerza','Recuperación','Evento deportivo'],
+  nubo:       ['Captación','Seguimiento','Propuestas','Redes','Visitas','Admin','Junta','Firma'],
+  shitoushui: ['Captación','Seguimiento','Propuestas','Redes','Visitas','Admin','Junta','Firma'],
+  trabajo:    ['Consultoría','Análisis','Reunión','Family Office','Reportes'],
+  alim:       ['Desayuno','Comida','Cena','Pre-entreno','Snack mañana','Snack tarde'],
+  personal:   ['Lectura','Trámites','Evento familiar','Mafer','Inicia el día','Cocinar'],
+  break:      ['Break','Siesta','Descanso activo']
 };
 
 const SLOTS = [];
@@ -1376,14 +1380,15 @@ function renderHabitos(el){
 }
 
 // ── PANEL ────────────────────────────────────────────────
-const CAT_LABELS = {tri:'Triatlón',nubo:'NUBO',trabajo:'Trabajo',alim:'Alimentación',personal:'Personal',break:'Break'};
+const CAT_LABELS = {tri:'Triatlón',nubo:'NUBO',trabajo:'Trabajo',alim:'Alimentación',personal:'Personal',break:'Break',shitoushui:'SHITOUSHUI'};
 const CAT_BADGE_STYLES = {
   tri:'background:#7C6FCD;color:#fff;',
   nubo:'background:#378ADD;color:#fff;',
   trabajo:'background:#378ADD;color:#fff;',
   alim:'background:#639922;color:#fff;',
   personal:'background:#D4537E;color:#fff;',
-  break:'background:#378ADD;color:#fff;'
+  break:'background:#378ADD;color:#fff;',
+  shitoushui:'background:#C15F2C;color:#fff;'
 };
 function openPanel(key,lbl,di,si){
   akey=key; aSi=si; aSiOriginal=si;
