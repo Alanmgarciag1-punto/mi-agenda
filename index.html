@@ -4,6 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Agenda — Alan</title>
+<link rel="preconnect" href="https://awpppnzpzzjflewrgaso.supabase.co" crossorigin/>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -308,7 +312,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 function showSync(msg, type){
   const el=document.getElementById('sync-status');
   el.textContent=msg; el.className='show '+type;
-  if(type!=='loading') setTimeout(()=>el.className='',2500);
+  if(type!=='loading') setTimeout(()=>el.className='', type==='err' ? 7000 : 2500);
 }
 
 // ── DESHACER (última acción) ──────────────────────────────
@@ -405,53 +409,141 @@ let aSiOriginal=0; // slot original al abrir el panel; no se toca mientras se ed
 let aEsDePendienteExistente=false;
 let aPendienteOrigenId=null; // si el bloque que se está editando viene de un pendiente, guarda su id
 
+// ── CACHÉ LOCAL (para abrir al instante y como respaldo) ──────
+let cacheTimer=null;
+function guardarCacheLocal(){
+  try{
+    localStorage.setItem('agenda_data', JSON.stringify(data));
+    localStorage.setItem('agenda_habitos', JSON.stringify(habitosData));
+    localStorage.setItem('agenda_pendientes', JSON.stringify(pendientes));
+    localStorage.setItem('agenda_locs', JSON.stringify(locs));
+  }catch(e){ console.warn('No se pudo guardar el caché local', e); }
+}
+function programarCache(){
+  clearTimeout(cacheTimer);
+  cacheTimer=setTimeout(guardarCacheLocal, 400);
+}
+function cargarCacheLocal(){
+  try{
+    data = JSON.parse(localStorage.getItem('agenda_data')||'{}');
+    habitosData = JSON.parse(localStorage.getItem('agenda_habitos')||'{}');
+    pendientes = JSON.parse(localStorage.getItem('agenda_pendientes')||'[]');
+    const l = localStorage.getItem('agenda_locs');
+    if(l) locs = JSON.parse(l);
+  }catch(e){ console.warn('No se pudo leer el caché local', e); }
+}
+
+// Cola de hábitos que no lograron guardarse en Supabase (se reintentan en la siguiente carga)
+let habitosPorSincronizar = [];
+try{ habitosPorSincronizar = JSON.parse(localStorage.getItem('agenda_habitos_pend')||'[]'); }catch(e){ habitosPorSincronizar=[]; }
+function guardarColaHabitos(){
+  try{ localStorage.setItem('agenda_habitos_pend', JSON.stringify(habitosPorSincronizar)); }catch(e){}
+}
+async function reintentarHabitosPendientes(){
+  if(!habitosPorSincronizar.length) return;
+  const copia=[...habitosPorSincronizar];
+  for(const p of copia){
+    try{
+      const {error}=await sb.from('habitos').upsert(
+        {fecha_key:p.fechaKey, habito_id:p.habitoId, completado:p.completado},
+        {onConflict:'fecha_key,habito_id'}
+      );
+      if(error) throw error;
+      habitosPorSincronizar=habitosPorSincronizar.filter(x=>!(x.fechaKey===p.fechaKey && x.habitoId===p.habitoId));
+    }catch(e){
+      console.error('Reintento de hábito falló:', e);
+      break;
+    }
+  }
+  guardarColaHabitos();
+}
+
 // ── SUPABASE: CARGAR ─────────────────────────────────────
+// Trae TODAS las filas de una tabla, de 1000 en 1000. Supabase corta por defecto en 1000 filas,
+// así que sin esto los registros más nuevos pueden no aparecer al refrescar.
+async function traerTodo(tabla, columnas, ordenarPor){
+  const PAGINA=1000;
+  let todas=[], desde=0;
+  while(true){
+    let q=sb.from(tabla).select(columnas);
+    (ordenarPor||[]).forEach(col=>{ q=q.order(col,{ascending:true}); });
+    const {data:filas, error}=await q.range(desde, desde+PAGINA-1);
+    if(error) throw error;
+    todas=todas.concat(filas||[]);
+    if(!filas || filas.length<PAGINA) break;
+    desde+=PAGINA;
+  }
+  return todas;
+}
+const VISTA_BTN = {semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos',hoy:'Hoy'};
+function marcarBotonVista(){
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active', b.textContent===VISTA_BTN[view]));
+}
 async function cargarDatos(){
   showSync('Sincronizando...','loading');
-  try {
-    // Cargar agenda
-    const {data: agendaRows, error: e1} = await sb.from('agenda').select('key,entry');
-    if(e1) throw e1;
-    data = {};
-    (agendaRows||[]).forEach(r => { data[r.key] = r.entry; });
+  const intento = (promesa)=>promesa.then(v=>({ok:true,v})).catch(e=>({ok:false,e}));
+  // Las cuatro tablas se piden al mismo tiempo (antes se pedían una por una, sumando la espera de cada una)
+  const [rAgenda, rLocs, rHab, rPend] = await Promise.all([
+    intento(traerTodo('agenda','key,entry',['key'])),
+    intento(sb.from('locs').select('data').eq('id',1).maybeSingle().then(r=>{ if(r.error) throw r.error; return r.data; })),
+    intento(traerTodo('habitos','fecha_key,habito_id,completado',['fecha_key','habito_id'])),
+    intento(traerTodo('pendientes','id,texto,created_at',['created_at','id']))
+  ]);
+  const fallos=[];
 
-    // Cargar locs
-    const {data: locsRow, error: e2} = await sb.from('locs').select('data').eq('id',1).single();
-    if(e2) throw e2;
-    if(locsRow && locsRow.data) locs = locsRow.data;
+  if(rAgenda.ok){
+    data={};
+    rAgenda.v.forEach(r=>{ if(r.entry!=='__EMPTY__') data[r.key]=r.entry; });
+  } else { fallos.push('agenda'); console.error('Error cargando agenda:', rAgenda.e); }
 
-    // Cargar hábitos
-    const {data: habRows, error: e3} = await sb.from('habitos').select('fecha_key,habito_id,completado');
-    if(e3) throw e3;
-    habitosData = {};
-    (habRows||[]).forEach(r => {
-      if(!habitosData[r.fecha_key]) habitosData[r.fecha_key] = {};
-      habitosData[r.fecha_key][r.habito_id] = r.completado;
+  if(rLocs.ok){
+    if(rLocs.v && rLocs.v.data) locs=rLocs.v.data;
+  } else { fallos.push('ubicaciones'); console.error('Error cargando ubicaciones:', rLocs.e); }
+
+  if(rHab.ok){
+    habitosData={};
+    rHab.v.forEach(r=>{
+      if(!habitosData[r.fecha_key]) habitosData[r.fecha_key]={};
+      habitosData[r.fecha_key][r.habito_id]=r.completado;
     });
+    // Lo que no alcanzó a guardarse en Supabase se vuelve a mostrar y se reintenta
+    habitosPorSincronizar.forEach(p=>{
+      if(!habitosData[p.fechaKey]) habitosData[p.fechaKey]={};
+      habitosData[p.fechaKey][p.habitoId]=p.completado;
+    });
+  } else { fallos.push('hábitos'); console.error('Error cargando hábitos:', rHab.e); }
 
-    // Cargar pendientes
-    const {data: pendRows, error: e4} = await sb.from('pendientes').select('id,texto,created_at').order('created_at',{ascending:true});
-    if(e4) throw e4;
-    pendientes = pendRows || [];
+  if(rPend.ok){
+    pendientes=rPend.v||[];
+  } else { fallos.push('pendientes'); console.error('Error cargando pendientes:', rPend.e); }
 
+  guardarCacheLocal();
+  if(fallos.length){
+    showSync('⚠ No se pudo cargar: '+fallos.join(', ')+' (se muestra lo guardado en este dispositivo)','err');
+  } else {
     showSync('✓ Sincronizado','ok');
-  } catch(e) {
-    console.error('Error cargando de Supabase:', e);
-    // Fallback a localStorage
-    data = JSON.parse(localStorage.getItem('agenda_data')||'{}');
-    locs = JSON.parse(localStorage.getItem('agenda_locs')||'["León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto.","León, Gto."]');
-    pendientes = JSON.parse(localStorage.getItem('agenda_pendientes')||'[]');
-    showSync('⚠ Sin conexión (local)','err');
   }
-  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b.textContent===({semana:'Semana',dia:'Día',mes:'Mes','año':'Año',habitos:'Hábitos'}[view])));
+  marcarBotonVista();
   render();
+
+  // Reintentar hábitos que no se habían guardado antes
+  if(rHab.ok && habitosPorSincronizar.length){
+    await reintentarHabitosPendientes();
+    if(habitosPorSincronizar.length){
+      showSync('⚠ '+habitosPorSincronizar.length+' hábito(s) sin guardar en la nube','err');
+    }
+  }
 }
 
 // ── SUPABASE: GUARDAR EVENTO ──────────────────────────────
 async function guardar(key, entry){
   localStorage.setItem('agenda_off', off);
+  // Ya no hay plantilla automática, así que una celda vacía simplemente se borra
+  // (antes se guardaba un marcador '__EMPTY__' que iba llenando la base de datos)
+  if(entry === '__EMPTY__') entry = null;
   // Actualizar local inmediatamente
   if(entry === null) { delete data[key]; } else { data[key] = entry; }
+  programarCache();
 
   try {
     if(entry === null){
@@ -487,16 +579,24 @@ async function guardarLocs(){
 async function guardarHabito(fechaKey, habitoId, completado){
   if(!habitosData[fechaKey]) habitosData[fechaKey] = {};
   habitosData[fechaKey][habitoId] = completado;
+  programarCache();
+  const mismo = (p)=> p.fechaKey===fechaKey && p.habitoId===habitoId;
   try {
     const {error} = await sb.from('habitos').upsert(
       {fecha_key: fechaKey, habito_id: habitoId, completado},
       {onConflict: 'fecha_key,habito_id'}
     );
     if(error) throw error;
+    habitosPorSincronizar = habitosPorSincronizar.filter(p=>!mismo(p));
+    guardarColaHabitos();
     showSync('✓ Guardado','ok');
   } catch(e) {
     console.error('Error guardando hábito:', e);
-    showSync('⚠ Guardado local','err');
+    // Se guarda en la cola para no perderlo al refrescar y reintentar en la siguiente carga
+    habitosPorSincronizar = habitosPorSincronizar.filter(p=>!mismo(p));
+    habitosPorSincronizar.push({fechaKey, habitoId, completado});
+    guardarColaHabitos();
+    showSync('⚠ Hábito no guardado en la nube: '+((e && e.message) || 'error desconocido'),'err');
   }
 }
 
@@ -784,6 +884,7 @@ function navNext(){
 
 // ── RENDER ───────────────────────────────────────────────
 function render(){
+  programarCache();
   const el=document.getElementById('content');
   if(view==='semana') renderSemana(el);
   else if(view==='dia') renderDia(el);
@@ -834,7 +935,7 @@ function renderSemana(el){
 
   const skip={};
   SLOTS.forEach((slot,si)=>{
-    html+=`<tr><td class="tc">${slot}</td>`;
+    html+=`<tr data-si="${si}"><td class="tc">${slot}</td>`;
     dates.forEach((d,di)=>{
       const k=fkey(d,si);
       if(skip[k]){return;}
@@ -868,20 +969,21 @@ function dibujarLineaTiempo(){
     const dates=getDates();
     const todayIdx=dates.findIndex(d=>isToday(d));
     if(todayIdx<0) return;
-    // Calcular posición basada en altura real de la tabla
-    const table=wrap.querySelector('table.cal');
-    if(!table) return;
-    const tableH=table.scrollHeight;
-    const theadH=table.querySelector('thead')?table.querySelector('thead').offsetHeight:0;
-    const bodyH=tableH-theadH;
-    const topPx=theadH+(bodyH*(totalMinsDesde5/(19*60)));
+    wrap.style.position='relative';
+    // Ubicamos la fila EXACTA del slot actual (en vez de calcular una proporción sobre
+    // la altura total de la tabla, que puede acumular errores de redondeo del navegador
+    // a lo largo de 38 filas). Así la línea siempre queda alineada con precisión.
+    const si=Math.floor(totalMinsDesde5/30);
+    const frac=(totalMinsDesde5%30)/30;
+    const row=wrap.querySelector(`tr[data-si="${si}"]`);
+    if(!row) return;
+    const topPx=row.offsetTop + row.offsetHeight*frac;
     const line=document.createElement('div');
     line.id='time-line';
     line.style.cssText=`position:absolute;left:0;right:0;height:2px;background:#E24B4A;box-shadow:0 0 8px #E24B4A88;z-index:20;pointer-events:none;top:${topPx}px;`;
     const dot=document.createElement('div');
     dot.style.cssText=`position:absolute;left:0;width:10px;height:10px;background:#E24B4A;border-radius:50%;top:-4px;z-index:21;box-shadow:0 0 10px #E24B4A;`;
     line.appendChild(dot);
-    wrap.style.position='relative';
     const old=document.getElementById('time-line');
     if(old) old.remove();
     wrap.appendChild(line);
@@ -1748,6 +1850,11 @@ window.addEventListener('resize', ()=>{
   if(view==='mes' || view==='hoy') render();
 });
 
+// Arranque: primero se muestra al instante lo último guardado en este dispositivo,
+// y mientras tanto se pide lo más reciente a Supabase para actualizar la pantalla.
+cargarCacheLocal();
+marcarBotonVista();
+render();
 cargarDatos();
 </script>
 </body>
