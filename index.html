@@ -22,6 +22,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:#111;color:#f0ede8;disp
 #sync-status.err{background:#2a1a1a;color:#FF8FB3;}
 #sync-status.loading{background:#1e1e1e;color:#888;}
 
+#app-version{position:fixed;bottom:4px;left:8px;font-size:9px;color:#555;z-index:5;pointer-events:none;}
+
 /* TOAST DE DESHACER */
 #undo-toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%) translateY(20px);z-index:210;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:10px;padding:8px 10px 8px 14px;display:flex;align-items:center;gap:12px;font-size:12px;color:#f0ede8;box-shadow:0 4px 20px #00000066;opacity:0;visibility:hidden;transition:opacity .2s ease,transform .2s ease;}
 #undo-toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
@@ -210,6 +212,7 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
 <body>
 
 <div id="sync-status"></div>
+<div id="app-version"></div>
 <div id="undo-toast">
   <span id="undo-toast-msg"></span>
   <button onclick="ejecutarDeshacer()">Deshacer</button>
@@ -241,6 +244,7 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
     </div>
     <button onclick="exportar()" class="png-btn" title="Exportar como imagen">⬇ PNG</button>
     <button onclick="descargarRespaldo()" class="png-btn" title="Descargar un respaldo completo de tus datos">⬇ Respaldo</button>
+    <button onclick="diagnosticar()" class="png-btn" title="Probar la conexión y el guardado de hábitos">🩺 Diagnóstico</button>
   </div>
 </div>
 
@@ -1757,6 +1761,50 @@ async function oDrp(e,destKey,destDi,destSi){
   render();
 }
 
+// ── DIAGNÓSTICO ───────────────────────────────────────────
+// Prueba paso a paso la conexión con Supabase y el guardado de hábitos, y muestra el resultado.
+const APP_VERSION='2026-10-12 b';
+async function diagnosticar(){
+  const lineas=['Versión de la agenda: '+APP_VERSION];
+  showSync('Ejecutando diagnóstico...','loading');
+  const paso=async(nombre,fn)=>{
+    try{ const r=await fn(); lineas.push('✓ '+nombre+(r?': '+r:'')); return true; }
+    catch(e){ lineas.push('✗ '+nombre+': '+((e&&e.message)||e)); return false; }
+  };
+  const enPantalla={
+    agenda:Object.keys(data).length,
+    habitos:Object.values(habitosData).reduce((n,o)=>n+Object.keys(o).length,0),
+    pendientes:pendientes.length
+  };
+  for(const t of ['agenda','habitos','pendientes']){
+    await paso('Filas en la nube de "'+t+'"',async()=>{
+      const {count,error}=await sb.from(t).select('*',{count:'exact',head:true});
+      if(error) throw error;
+      return count+' (en pantalla: '+enPantalla[t]+')';
+    });
+  }
+  const fk='__diag__', hid='__diag__';
+  const guardo=await paso('Guardar un hábito de prueba',async()=>{
+    const {error}=await sb.from('habitos').upsert({fecha_key:fk,habito_id:hid,completado:true},{onConflict:'fecha_key,habito_id'});
+    if(error) throw error;
+  });
+  if(guardo){
+    await paso('Leer de vuelta el hábito de prueba',async()=>{
+      const {data:filas,error}=await sb.from('habitos').select('fecha_key,habito_id,completado').eq('fecha_key',fk).eq('habito_id',hid);
+      if(error) throw error;
+      if(!filas||!filas.length) throw new Error('se guardó pero NO se puede leer de vuelta (probable permiso de lectura de la tabla)');
+      return 'bien';
+    });
+    await paso('Borrar el hábito de prueba',async()=>{
+      const {error}=await sb.from('habitos').delete().eq('fecha_key',fk).eq('habito_id',hid);
+      if(error) throw error;
+    });
+  }
+  lineas.push('Hábitos pendientes de sincronizar en este dispositivo: '+habitosPorSincronizar.length);
+  showSync('Diagnóstico terminado','ok');
+  alert(lineas.join('\n'));
+}
+
 // ── DESCARGAR RESPALDO (JSON) ─────────────────────────────
 // Descarga un archivo con todos tus datos (agenda, hábitos, ubicaciones y pendientes)
 // como respaldo. Es un archivo de solo lectura para guardar aparte; no se "restaura"
@@ -1852,6 +1900,7 @@ window.addEventListener('resize', ()=>{
 
 // Arranque: primero se muestra al instante lo último guardado en este dispositivo,
 // y mientras tanto se pide lo más reciente a Supabase para actualizar la pantalla.
+document.getElementById('app-version').textContent='v'+APP_VERSION;
 cargarCacheLocal();
 marcarBotonVista();
 render();
