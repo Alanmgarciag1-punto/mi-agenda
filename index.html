@@ -22,8 +22,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:#111;color:#f0ede8;disp
 #sync-status.err{background:#2a1a1a;color:#FF8FB3;}
 #sync-status.loading{background:#1e1e1e;color:#888;}
 
-#app-version{position:fixed;bottom:4px;left:8px;font-size:9px;color:#555;z-index:5;pointer-events:none;}
-
 /* TOAST DE DESHACER */
 #undo-toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%) translateY(20px);z-index:210;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:10px;padding:8px 10px 8px 14px;display:flex;align-items:center;gap:12px;font-size:12px;color:#f0ede8;box-shadow:0 4px 20px #00000066;opacity:0;visibility:hidden;transition:opacity .2s ease,transform .2s ease;}
 #undo-toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
@@ -36,12 +34,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:#111;color:#f0ede8;disp
 .top-bar h1{display:none;}
 .nav-area{display:flex;align-items:center;gap:10px;}
 .nav-date-main{font-size:15px;font-weight:500;color:#f0ede8;letter-spacing:-.01em;}
-.nav-date-year{font-size:11px;color:#ffffff25;}
-.nav-area button{background:none;border:1px solid #ffffff12;color:#ffffff40;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:14px;transition:all .15s;}
+.nav-date-year{font-size:11px;color:#8a8a8a;}
+.nav-area button{background:none;border:1px solid #3a3a3a;color:#b0b0b0;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:14px;transition:all .15s;}
 .nav-area button:hover{background:#ffffff08;color:#f0ede8;}
 .nav-title{display:none;}
 .view-btns{display:flex;gap:2px;background:#080808;border-radius:10px;padding:3px;}
-.vbtn{background:none;border:none;color:#ffffff30;border-radius:7px;padding:4px 11px;cursor:pointer;font-size:12px;font-weight:400;transition:all .15s;font-family:'Inter',system-ui,sans-serif;}
+.vbtn{background:none;border:none;color:#9a9a9a;border-radius:7px;padding:4px 11px;cursor:pointer;font-size:12px;font-weight:400;transition:all .15s;font-family:'Inter',system-ui,sans-serif;}
 .vbtn:hover{color:#f0ede8;}
 .vbtn.active{background:#f0ede8;color:#111;font-weight:600;}
 .vbtn.vbtn-habitos{color:#9B8FD8;}
@@ -49,9 +47,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:#111;color:#f0ede8;disp
 .vbtn.vbtn-hoy{color:#E0A93E;}
 .vbtn.vbtn-hoy.active{background:#E0A93E;color:#111;}
 .leg-inline{display:flex;gap:12px;align-items:center;}
-.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#ffffff30;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#9a9a9a;}
 .leg-dot{width:7px;height:7px;border-radius:50%;}
-.png-btn{background:none;border:1px solid #ffffff12;color:#ffffff30;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;margin-left:4px;}
+.png-btn{background:none;border:1px solid #3a3a3a;color:#9a9a9a;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;margin-left:4px;}
 
 /* CONTENT AREA */
 .content{flex:1;overflow:auto;min-height:0;}
@@ -141,7 +139,7 @@ table.cal td.slot.drag-over{background:#1e1a2e!important;outline:2px dashed #7C6
 .block{height:100%;width:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:9px;font-weight:500;border-radius:4px;padding:3px 5px;line-height:1.3;cursor:grab;overflow:hidden;position:relative;transition:filter .15s,transform .1s;}
 .block-title{font-size:10px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;}
 .block-footer{display:flex;justify-content:space-between;align-items:center;gap:2px;}
-.block-time{font-size:9px;opacity:.4;}
+.block-time{font-size:9px;opacity:.7;}
 .block-badge{font-size:8px;border-radius:20px;padding:1px 5px;white-space:nowrap;flex-shrink:0;}
 .badge-completado{background:#4CAF5022;color:#4CAF50;}
 .badge-pendiente{background:#E0A93E22;color:#E0A93E;}
@@ -212,7 +210,6 @@ textarea.pval-desc:focus{border-color:#7C6FCD;}
 <body>
 
 <div id="sync-status"></div>
-<div id="app-version"></div>
 <div id="undo-toast">
   <span id="undo-toast-msg"></span>
   <button onclick="ejecutarDeshacer()">Deshacer</button>
@@ -1021,26 +1018,26 @@ function renderDia(el){
     const k=fkey(target,si);
     if(skip[k]) return;
     const e=getEntry(target,si,di);
-    const tcBg='background:#faf9f6;color:#888;';
+    const tcBg='background:#111;color:#9a9a9a;';
     if(e&&e.dur>1){
       for(let x=1;x<e.dur;x++) skip[fkey(target,si+x)]=true;
-      html+=`<div style="display:flex;height:calc(${rh} * ${e.dur});flex-shrink:0;border-bottom:1px solid #e0ddd8;">
-        <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #e0ddd8;display:flex;align-items:flex-start;padding-top:4px;">${slot}</div>
-        <div style="flex:1;padding:2px;cursor:pointer;background:#fff;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+      html+=`<div style="display:flex;height:calc(${rh} * ${e.dur});flex-shrink:0;border-bottom:1px solid #222;">
+        <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #222;display:flex;align-items:flex-start;padding-top:4px;">${slot}</div>
+        <div style="flex:1;padding:2px;cursor:pointer;background:#111;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
           ${blockHtml(e,k,di,si,'style="height:100%;"')}
         </div>
       </div>`;
     } else if(e){
-      html+=`<div style="display:flex;height:${rh};flex-shrink:0;border-bottom:1px solid #e0ddd8;">
-        <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #e0ddd8;display:flex;align-items:center;">${slot}</div>
-        <div style="flex:1;padding:2px;cursor:pointer;background:#fff;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
+      html+=`<div style="display:flex;height:${rh};flex-shrink:0;border-bottom:1px solid #222;">
+        <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #222;display:flex;align-items:center;">${slot}</div>
+        <div style="flex:1;padding:2px;cursor:pointer;background:#111;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
           ${blockHtml(e,k,di,si,'style="height:100%;"')}
         </div>
       </div>`;
     } else {
-      html+=`<div style="display:flex;height:${rh};flex-shrink:0;border-bottom:1px solid #e0ddd8;">
-        <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #e0ddd8;display:flex;align-items:center;">${slot}</div>
-        <div style="flex:1;padding:2px;cursor:pointer;background:#fff;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></div>
+      html+=`<div style="display:flex;height:${rh};flex-shrink:0;border-bottom:1px solid #222;">
+        <div style="width:90px;flex-shrink:0;font-size:9px;text-align:right;padding:0 8px;${tcBg}border-right:1px solid #222;display:flex;align-items:center;">${slot}</div>
+        <div style="flex:1;padding:2px;cursor:pointer;background:#111;" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDrp(event,'${k}',${di},${si})" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})"></div>
       </div>`;
     }
   });
@@ -1240,7 +1237,7 @@ function renderHoy(el){
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="border-radius:8px;padding:7px 10px;min-height:${e.dur*slotHm}px;">
               <div style="font-size:12px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div>
-              <div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+e.dur)}</div>
+              <div style="font-size:9px;opacity:.7;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+e.dur)}</div>
               ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:9px;border-radius:20px;padding:1px 6px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
             </div>
           </div>
@@ -1250,7 +1247,7 @@ function renderHoy(el){
           <div style="width:62px;flex-shrink:0;font-size:8px;text-align:right;white-space:nowrap;${tcBg}">${slotToTime(si)}–${slotToTime(si+1)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
             <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
-              <div><div style="font-size:12px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)}</div></div>
+              <div><div style="font-size:12px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.7;">${e.horaI||slotToTime(si)}</div></div>
               ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:9px;border-radius:20px;padding:1px 6px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
             </div>
           </div>
@@ -1293,14 +1290,14 @@ function renderHoy(el){
         html+=`<div style="border-bottom:0.5px solid #222;height:${e.dur*slotH}px;padding:2px;cursor:pointer;${tcBg}" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
           <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="height:100%;border-radius:6px;padding:6px 10px;">
             <div style="font-size:11px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div>
-            <div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+e.dur)}</div>
+            <div style="font-size:9px;opacity:.7;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+e.dur)}</div>
             ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:8px;border-radius:20px;padding:1px 5px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
           </div>
         </div>`;
       } else if(e){
         html+=`<div style="border-bottom:0.5px solid #222;height:${slotH}px;padding:2px;cursor:pointer;${tcBg}" onclick="openPanel('${k}','${DAYS[di]} · ${slot}',${di},${si})">
           <div class="b-${e.cat}${e.origenPendiente?' from-pendiente':''}" style="height:100%;border-radius:6px;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;">
-            <div><div style="font-size:11px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.4;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+1)}</div></div>
+            <div><div style="font-size:11px;font-weight:500;">${pendienteMarker(e)}${e.titulo||e.sub||e.cat}</div><div style="font-size:9px;opacity:.7;">${e.horaI||slotToTime(si)} – ${e.horaF||slotToTime(si+1)}</div></div>
             ${e.estado?`<span class="block-badge badge-${e.estado}" style="font-size:8px;border-radius:20px;padding:1px 5px;">${e.estado==='completado'?'✓':e.estado}</span>`:''}
           </div>
         </div>`;
@@ -1415,10 +1412,10 @@ function renderHabitos(el){
 
   // Calcular contadores por categoría
   const catGroups = {
-    tri:  {label:'Triatlón', color:'#7C6FCD', fill:'#EEEDFE', ids:['pe','se','fu']},
-    sup:  {label:'Suplementos', color:'#888', fill:'#f5f4f0', ids:['cr','ca','e','p']},
-    alim: {label:'Alimentación', color:'#639922', fill:'#EAF3DE', ids:['a','c1','co','c2','ce']},
-    per:  {label:'Personal', color:'#D4537E', fill:'#FBEAF0', ids:['l']}
+    tri:  {label:'Triatlón', color:'#7C6FCD', text:'#B8AEFF', fill:'#1e1a2e', ids:['pe','se','fu']},
+    sup:  {label:'Suplementos', color:'#888', text:'#b0b0b0', fill:'#1e1e1e', ids:['cr','ca','e','p']},
+    alim: {label:'Alimentación', color:'#639922', text:'#8FD44F', fill:'#162016', ids:['a','c1','co','c2','ce']},
+    per:  {label:'Personal', color:'#D4537E', text:'#FF8FB3', fill:'#1e1228', ids:['l']}
   };
   const counts = {tri:{done:0,total:0},sup:{done:0,total:0},alim:{done:0,total:0},per:{done:0,total:0}};
   for(let day=1;day<=totalDias;day++){
@@ -1438,12 +1435,12 @@ function renderHabitos(el){
   Object.entries(catGroups).forEach(([cat,g])=>{
     const pct=counts[cat].total>0?Math.round((counts[cat].done/counts[cat].total)*100):0;
     html+=`<div style="background:${g.fill};border-radius:8px;padding:10px 12px;">
-      <div style="font-size:10px;color:${g.color};margin-bottom:2px;font-weight:500;">${g.label}</div>
-      <div style="font-size:20px;font-weight:600;color:${g.color};">${pct}%</div>
-      <div style="height:3px;background:#fff;border-radius:2px;margin-top:5px;overflow:hidden;">
+      <div style="font-size:10px;color:${g.text};margin-bottom:2px;font-weight:500;">${g.label}</div>
+      <div style="font-size:20px;font-weight:600;color:${g.text};">${pct}%</div>
+      <div style="height:3px;background:#2a2a2a;border-radius:2px;margin-top:5px;overflow:hidden;">
         <div style="height:100%;width:${pct}%;background:${g.color};border-radius:2px;transition:width .3s;"></div>
       </div>
-      <div style="font-size:9px;color:${g.color};opacity:.7;margin-top:3px;">${counts[cat].done}/${counts[cat].total}</div>
+      <div style="font-size:9px;color:${g.text};opacity:.8;margin-top:3px;">${counts[cat].done}/${counts[cat].total}</div>
     </div>`;
   });
   html+='</div>';
@@ -1451,7 +1448,8 @@ function renderHabitos(el){
   // Tabla de hábitos
   const colColors = {tri:'#7C6FCD',sup:'#888',alim:'#639922',per:'#D4537E'};
   const habCat = {pe:'tri',se:'tri',fu:'tri',cr:'sup',ca:'sup',e:'sup',p:'sup',a:'alim',c1:'alim',co:'alim',c2:'alim',ce:'alim',l:'per'};
-  const habFill = {tri:'#EEEDFE',sup:'#f5f4f0',alim:'#EAF3DE',per:'#FBEAF0'};
+  const habFill = {tri:'#2a2047',sup:'#2a2a2a',alim:'#1c2a1c',per:'#2a1520'};
+  const habCheck = {tri:'#B8AEFF',sup:'#c0c0c0',alim:'#8FD44F',per:'#FF8FB3'};
 
   html+='<table style="border-collapse:collapse;width:100%;min-width:700px;font-size:11px;">';
   html+='<thead><tr style="position:sticky;top:0;background:#1a1a1a;z-index:5;">';
@@ -1468,13 +1466,13 @@ function renderHabitos(el){
     const fechaKey=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
     const isT=isToday(d);
     html+=`<tr${isT?' style="background:#2a1f0a;"':''}>`;
-    html+=`<td style="padding:4px 8px;border:0.5px solid #222;font-weight:${isT?'600':'400'};white-space:nowrap;color:${isT?'#E0A93E':'#888'};">${day} ${dow}</td>`;
+    html+=`<td style="padding:4px 8px;border:0.5px solid #222;font-weight:${isT?'600':'400'};white-space:nowrap;color:${isT?'#E0A93E':'#9a9a9a'};">${day} ${dow}</td>`;
     HABITOS_DEF.forEach(h=>{
       const cat=habCat[h.id]||'sup';
       const marcado=(habitosData[fechaKey]&&habitosData[fechaKey][h.id])||false;
       const bg=marcado?habFill[cat]:'#111';
-      const color=marcado?colColors[cat]:'#333';
-      html+=`<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:0.5px solid #222;text-align:center;cursor:pointer;background:${bg};">`;
+      const color=marcado?habCheck[cat]:'#555';
+      html+=`<td onclick="toggleHabito('${fechaKey}','${h.id}')" style="padding:2px;border:0.5px solid ${marcado?colColors[cat]+'55':'#222'};text-align:center;cursor:pointer;background:${bg};">`;
       html+=`<span style="color:${color};font-size:13px;">${marcado?'✓':'·'}</span></td>`;
     });
     html+='</tr>';
@@ -1763,7 +1761,7 @@ async function oDrp(e,destKey,destDi,destSi){
 
 // ── DIAGNÓSTICO ───────────────────────────────────────────
 // Prueba paso a paso la conexión con Supabase y el guardado de hábitos, y muestra el resultado.
-const APP_VERSION='2026-10-12 b';
+const APP_VERSION='2026-10-19';
 async function diagnosticar(){
   const lineas=['Versión de la agenda: '+APP_VERSION];
   showSync('Ejecutando diagnóstico...','loading');
@@ -1900,7 +1898,6 @@ window.addEventListener('resize', ()=>{
 
 // Arranque: primero se muestra al instante lo último guardado en este dispositivo,
 // y mientras tanto se pide lo más reciente a Supabase para actualizar la pantalla.
-document.getElementById('app-version').textContent='v'+APP_VERSION;
 cargarCacheLocal();
 marcarBotonVista();
 render();
